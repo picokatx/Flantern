@@ -1,0 +1,108 @@
+{
+  "user": {
+    "user_uuid": {
+      "name": "picobyte86",
+      "email": "picobyte86@gmail.com",
+      "description": "probably playing block games",
+      "status": 0,
+      "profile": "link/to/image"
+    }
+  },
+  "user.contacts": {
+    "user_uuid": {
+      "pinned": [
+        "contact_uuid"
+      ],
+      "muted": [
+        "contact_uuid"
+      ],
+      "has": [
+        "contact_uuid"
+      ]
+    }
+  },
+  "user.groups": {
+    "user_uuid": {
+      "pinned": [
+        "group_uuid"
+      ],
+      "muted": [
+        "group_uuid"
+      ],
+      "has": [
+        "group_uuid"
+      ]
+    }
+  },
+  "user.threads": {
+    "user_uuid": {
+      "pinned": [
+        "contact_uuid"
+      ],
+      "muted": [
+        "contact_uuid"
+      ],
+      "has": [
+        "contact_uuid"
+      ]
+    }
+  },
+  "groups": {
+    "group_uuid": {
+      "name": "Lantern Chat",
+      "description": "Chat for all Lantern Enthusiasts",
+      "profile": "link/to/image"
+    }
+  },
+  "groups.messages": {
+    "group_uuid": {
+      "message_uuid": {
+        "user": "user_uuid",
+        "content": "hello world!",
+        "timestamp": 0
+      }
+    }
+  },
+  "groups.members": {
+    "group_uuid": {
+      "created_by": "user_uuid",
+      "admins": [
+        "user_uuid"
+      ],
+      "has": [
+        "user_uuid"
+      ]
+    }
+  },
+  "groups.pins": {
+    "group_uuid": {
+      "pinned": "message_uuid",
+      "has": [
+        "message_uuid"
+      ]
+    }
+  },
+  "groups.threads": {
+    "group_uuid": {
+      "has": [
+        "thread_uuid"
+      ]
+    }
+  },
+  "threads": {
+    "thread_uuid": {
+      "name": "Floating Lanterns",
+      "description": "very serious discussion on floating lanterns",
+      "parent": "group_uuid"
+    }
+  },
+  "threads.messages": {
+    "thread_uuid": {
+      "message_uuid": {
+        "user": "user_uuid",
+        "content": "hello world!",
+        "timestamp": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "217248892282",
+    "firebase_url": "https://flantern-ea117-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "flantern-ea117",
+    "storage_bucket": "flantern-ea117.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:217248892282:android:5ba429e2e6a779383782c3",
+        "android_client_info": {
+          "package_name": "com.picobyte.flantern"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "217248892282-p502ne35svuo0aj0rrsh5g6o5dig5ptg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.picobyte.flantern",
+            "certificate_hash": "f12bf9c543278614ce1c5052ea9f00605c41d501"
+          }
+        },
+        {
+          "client_id": "217248892282-cjrr8bt27krru9pgdc9380ce1nm2dvm6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7XUvq_Y15_qF6I6lqJdgG9YJgXugnG78"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "217248892282-cjrr8bt27krru9pgdc9380ce1nm2dvm6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
