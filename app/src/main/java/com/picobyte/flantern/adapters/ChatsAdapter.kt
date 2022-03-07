@@ -1,5 +1,6 @@
 package com.picobyte.flantern.adapters
 
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +23,9 @@ import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.db.GroupsViewModel
+import com.picobyte.flantern.types.Message
+import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateWithBundle
 
 class ChatsAdapter(val groups_UID: ArrayList<String>) :
     RecyclerView.Adapter<ChatsAdapter.ViewHolder>() {
@@ -32,25 +36,21 @@ class ChatsAdapter(val groups_UID: ArrayList<String>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        (holder.binding.root.context as MainActivity).rtDatabase.getReference("/groups/${groups_UID[position]}")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val group = snapshot.getValue(Group::class.java)
-                    if (group != null) {
-                        holder.bindItems(group)
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    return
-                }
-            })
+        val ref = (holder.binding.root.context as MainActivity).rtDatabase.getReference("/groups/${groups_UID[position]}")
+        ref.get().addOnCompleteListener {
+            holder.bindItems(it.result.getValue(Group::class.java)!!, ref.key!!)
+        }
     }
 
     override fun getItemCount() = groups_UID.size
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val binding = CardChatsBinding.bind(itemView)
-        fun bindItems(chp: Group) {
+        fun bindItems(chp: Group, groupUID: String) {
+            binding.root.setOnClickListener {
+                val bundle = Bundle()
+                bundle.putString("group_uid", groupUID)
+                navigateWithBundle(binding.root, R.id.action_global_ChatFragment, bundle)
+            }
             binding.chatName.text = chp.name
             binding.chatRecent.text = "${chp.recent?.user}: ${chp.recent?.content}"
             binding.chatRecentDate.text = chp.recent?.timestamp.toString()

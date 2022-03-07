@@ -9,10 +9,7 @@ import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.GenericTypeIndicator
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.google.firebase.ktx.Firebase
 import com.picobyte.flantern.adapters.ChatsAdapter
 import com.picobyte.flantern.databinding.FragmentChatsBinding
@@ -35,6 +32,32 @@ class ChatsFragment : Fragment() {
         val adapter = ChatsAdapter(groupsUID)
 
         (requireActivity() as MainActivity).rtDatabase.getReference("/user_groups/${Firebase.auth.uid!!}/has")
+            .addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    groupsUID.add(0, snapshot.key!!)
+                    adapter.notifyItemInserted(0)
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    adapter.notifyItemChanged(groupsUID.indexOf(snapshot.key))
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {
+                    val pos: Int = groupsUID.indexOf(snapshot.key!!)
+                    groupsUID.remove(snapshot.key!!)
+                    adapter.notifyItemRemoved(pos)
+                }
+
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                    return
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    return
+                }
+
+            })
+        /*(requireActivity() as MainActivity).rtDatabase.getReference("/user_groups/${Firebase.auth.uid!!}/has")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     snapshot.children.forEach {
@@ -53,10 +76,11 @@ class ChatsFragment : Fragment() {
                         }
                     }
                 }
+
                 override fun onCancelled(error: DatabaseError) {
                     return
                 }
-            })
+            })*/
         recyclerView.adapter = adapter
         return binding.root
     }

@@ -38,4 +38,17 @@
     <action
         android:id="@+id/action_global_HomeFragment"
         app:destination="@id/HomeFragment" />
+    <fragment
+        android:id="@+id/ChatsFragment"
+        android:name="com.picobyte.flantern.ChatsFragment"
+        android:label="ChatsFragment"
+        tools:layout="@layout/fragment_chats" />
+    <fragment
+        android:id="@+id/ChatFragment"
+        android:name="com.picobyte.flantern.ChatFragment"
+        android:label="ChatFragment"
+        tools:layout="@layout/fragment_chat" />
+    <action
+        android:id="@+id/action_global_ChatFragment"
+        app:destination="@id/ChatFragment" />
 </navigation>
