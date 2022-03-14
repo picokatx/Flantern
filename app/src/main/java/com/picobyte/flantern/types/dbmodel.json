@@ -56,11 +56,31 @@
   },
   "groups.messages": {
     "group_uuid": {
-      "message_uuid": {
-        "user": "user_uuid",
-        "content": "hello world!",
-        "timestamp": 0
+      "timestamp_1" : {
+        "message_uuid": {
+          "user": "user_uuid",
+          "content": "hello world!",
+          "timestamp": 0
+        },
+        "message_uuid": {
+          "user": "user_uuid",
+          "content": "hello world!",
+          "timestamp": 0
+        }
+      },
+      "timestamp_2" : {
+        "message_uuid": {
+          "user": "user_uuid",
+          "content": "hello world!",
+          "timestamp": 0
+        },
+        "message_uuid": {
+          "user": "user_uuid",
+          "content": "hello world!",
+          "timestamp": 0
+        }
       }
+
     }
   },
   "groups.members": {
