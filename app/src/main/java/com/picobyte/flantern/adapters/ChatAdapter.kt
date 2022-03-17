@@ -1,7 +1,5 @@
 package com.picobyte.flantern.adapters
 
-import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,17 +7,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.R
 import com.picobyte.flantern.databinding.CardMessageBinding
-import com.picobyte.flantern.types.Group
 import com.picobyte.flantern.types.Message
-import com.firebase.ui.database.FirebaseRecyclerAdapter;
-import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.firebase.ui.database.paging.DatabasePagingOptions
-import com.firebase.ui.database.paging.FirebaseRecyclerPagingAdapter
-import com.firebase.ui.database.paging.LoadingState
-import com.picobyte.flantern.databinding.CardChatsBinding
-import com.picobyte.flantern.utils.navigateWithBundle
+import com.picobyte.flantern.types.User
+import com.picobyte.flantern.types.getDate
 
-class ChatAdapter(private val messagesUID: ArrayList<Message>) :
+class ChatAdapter(private val messagesUID: ArrayList<Pair<String, Message>>) :
     RecyclerView.Adapter<ChatAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v: View = LayoutInflater.from(parent.context)
@@ -27,24 +19,33 @@ class ChatAdapter(private val messagesUID: ArrayList<Message>) :
         return ViewHolder(v)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bindItems(messagesUID[position])
+     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bindItems(messagesUID[position].second)
     }
 
     override fun getItemCount(): Int {
         return messagesUID.size
     }
+
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val binding = CardMessageBinding.bind(itemView)
         fun bindItems(chp: Message) {
-            binding.nameField.text = chp.user
+            val userMap = (itemView.context as MainActivity).userMap
+            if (!userMap.containsKey(chp.user)) {
+                binding.nameField.text = "..."
+                (itemView.context as MainActivity).rtDatabase.getReference("/user/${chp.user}")
+                    .get().addOnCompleteListener {
+                        userMap[chp.user!!] = it.result.getValue(User::class.java)!!
+                        binding.nameField.text = userMap[chp.user]!!.name
+                    }
+            } else {
+                binding.nameField.text = userMap[chp.user]!!.name
+            }
             binding.contentField.text = chp.content
-            binding.timestampField.text = chp.timestamp.toString()
+            binding.timestampField.text = getDate(chp.timestamp!!, "hh:mm:ss")
         }
     }
-
 }
-
 
 /*class ChatAdapter(private val options: DatabasePagingOptions<Message>) :
     FirebaseRecyclerPagingAdapter<

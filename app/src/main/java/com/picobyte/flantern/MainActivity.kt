@@ -13,11 +13,14 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
 import com.picobyte.flantern.authentication.AuthFirebase
 import com.picobyte.flantern.authentication.AuthGoogle
 import com.picobyte.flantern.databinding.ActivityMainBinding
 import com.picobyte.flantern.db.GroupsViewModel
 import com.picobyte.flantern.types.Message
+import com.picobyte.flantern.types.User
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext
 
@@ -28,13 +31,15 @@ class MainActivity : AppCompatActivity() {
     lateinit var authFirebase: AuthFirebase
     lateinit var rtDatabase: FirebaseDatabase
     lateinit var groupsViewModel: GroupsViewModel
+    lateinit var storage: FirebaseStorage
+    val userMap: HashMap<String, User> = HashMap<String, User>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         authGoogle = AuthGoogle(this,Firebase.auth)
         authFirebase = AuthFirebase(this, Firebase.auth)
         rtDatabase = Firebase.database(getString(R.string.realtime_db_id))
-
+        storage = Firebase.storage
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         val navController = findNavController(R.id.nav_host_fragment_content_main)

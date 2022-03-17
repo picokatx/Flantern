@@ -30,8 +30,7 @@ class ChatsFragment : Fragment() {
         recyclerView.layoutManager = layoutManager
         val groupsUID: ArrayList<String> = ArrayList<String>()
         val adapter = ChatsAdapter(groupsUID)
-
-        (requireActivity() as MainActivity).rtDatabase.getReference("/user_groups/${Firebase.auth.uid!!}/has")
+        (this.context as MainActivity).rtDatabase.getReference("/user_groups/${Firebase.auth.uid!!}/has")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     groupsUID.add(0, snapshot.key!!)

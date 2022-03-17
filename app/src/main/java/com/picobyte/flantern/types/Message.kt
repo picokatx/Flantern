@@ -5,5 +5,6 @@ data class Message(
     val content: String? = null,
     val timestamp: Long? = null,
     val replying: String? = null,
-    val forwarded: Boolean? = null
+    val forwarded: Boolean? = null,
+    val embed: Embed? = null
 )

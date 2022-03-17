@@ -1,12 +1,9 @@
 package com.picobyte.flantern.types
 
 data class User(
-    val name: String,
-    val email: String,
-    val description: String,
-    val status: Status,
-    val profile: String,
-    val contacts: MessageTarget,
-    val groups: MessageTarget,
-    val threads: MessageTarget
+    val name: String? = null,
+    val email: String? = null,
+    val description: String? = null,
+    val status: Int? = null,
+    val profile: String? = null,
 )
