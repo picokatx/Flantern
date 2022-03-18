@@ -6,12 +6,8 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.picobyte.flantern.adapters.ChatAdapter
 import com.picobyte.flantern.types.MessageEdit
-import java.util.*
-import kotlin.Comparator
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class PagedRecyclerWrapper<T>(
     val adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>,
@@ -23,7 +19,8 @@ class PagedRecyclerWrapper<T>(
 ) {
     lateinit var lastKey: String
     lateinit var firstKey: String
-    //lateinit var liveKey: String
+    val live: ArrayList<Pair<String, T>> = ArrayList<Pair<String, T>>()
+    lateinit var liveKey: String
     var isLiveLoaded: Boolean = false
 
     fun initializePager() {
@@ -31,11 +28,12 @@ class PagedRecyclerWrapper<T>(
             if (it.result.children.toList().isNotEmpty()) {
                 lastKey = it.result.children.first().key!!
                 firstKey = it.result.children.last().key!!
-                //liveKey = it.result.children.first().key!!
+                liveKey = it.result.children.first().key!!
                 it.result.children.forEach { msg ->
                     repo.add(Pair(msg.key!!, msg.getValue(dataType)!!))
-                    adapter.notifyItemInserted(0)
+                    adapter.notifyItemInserted(repo.size)
                 }
+                live.addAll(repo)
             }
         }
     }
@@ -73,8 +71,8 @@ class PagedRecyclerWrapper<T>(
             }
         while (repo.size > pageLength * 3) {
             repo.removeAt(repo.size - 1)
-            adapter.notifyItemRemoved(repo.size-1)
-            firstKey = repo[0].first
+            adapter.notifyItemRemoved(repo.size - 1)
+            firstKey = repo[repo.size - 1].first
         }
     }
 
@@ -102,13 +100,28 @@ class PagedRecyclerWrapper<T>(
                         when (snapshot.getValue(Int::class.java)) {
                             MessageEdit.ADD.ordinal -> {
                                 ref.child("static/${snapshot.key}").get().addOnCompleteListener {
-                                    repo.add(Pair(it.result.key!!, it.result.getValue(dataType)!!))
-
-                                    adapter.notifyItemInserted(adapter.itemCount)
-                                    recycler.scrollToPosition(adapter.itemCount - 1)
+                                    val temp = Pair(it.result.key!!, it.result.getValue(dataType)!!)
+                                    live.add(temp)
+                                    live.removeAt(0)
+                                    liveKey = live[0].first
+                                    if (firstKey.compareTo(liveKey) > 0) {
+                                        Log.e("Flantern", "Program is moving you to the bottom")
+                                        repo.add(temp)
+                                        adapter.notifyItemInserted(adapter.itemCount)
+                                        recycler.scrollToPosition(adapter.itemCount - 1)
+                                    } else {
+                                        repo.clear()
+                                        Log.e("Flantern", "Program is reloading this shit")
+                                        repo.addAll(live)
+                                        firstKey = repo[repo.size - 1].first
+                                        lastKey = repo[0].first
+                                        adapter.notifyDataSetChanged()
+                                        recycler.scrollToPosition(adapter.itemCount - 1)
+                                    }
                                 }
                             }
                             MessageEdit.DELETE.ordinal -> {
+                                //todo: fix this in accordance to live/repo implementation
                                 for (i in 0..repo.size) {
                                     if (repo[i].first == snapshot.key) {
                                         repo.removeAt(i)
@@ -118,6 +131,7 @@ class PagedRecyclerWrapper<T>(
                                 }
                             }
                             MessageEdit.MODIFY.ordinal -> {
+                                //todo: fix this in accordance to live/repo implementation
                                 for (i in 0..repo.size) {
                                     if (repo[i].first == snapshot.key) {
                                         ref.child("static/${snapshot.key}").get()
@@ -137,7 +151,6 @@ class PagedRecyclerWrapper<T>(
                         isLiveLoaded = true
                     }
                 }
-
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
                     return
                 }
