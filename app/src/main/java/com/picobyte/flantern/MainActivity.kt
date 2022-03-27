@@ -1,5 +1,7 @@
 package com.picobyte.flantern
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -8,6 +10,8 @@ import androidx.navigation.ui.navigateUp
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
@@ -19,6 +23,7 @@ import com.picobyte.flantern.authentication.AuthFirebase
 import com.picobyte.flantern.authentication.AuthGoogle
 import com.picobyte.flantern.databinding.ActivityMainBinding
 import com.picobyte.flantern.db.GroupsViewModel
+import com.picobyte.flantern.ext.Launchers
 import com.picobyte.flantern.types.Message
 import com.picobyte.flantern.types.User
 import kotlinx.coroutines.CoroutineScope
@@ -32,11 +37,18 @@ class MainActivity : AppCompatActivity() {
     lateinit var rtDatabase: FirebaseDatabase
     lateinit var groupsViewModel: GroupsViewModel
     lateinit var storage: FirebaseStorage
+    val REQUEST_ID_MULTIPLE_PERMISSIONS = 101
+    val REQUEST_CAMERA_CODE = 200
+    val REQUEST_GALLERY_CODE = 300
     val userMap: HashMap<String, User> = HashMap<String, User>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        authGoogle = AuthGoogle(this,Firebase.auth)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_GALLERY_CODE )
+        }
+        authGoogle = AuthGoogle(this, Firebase.auth)
         authFirebase = AuthFirebase(this, Firebase.auth)
         rtDatabase = Firebase.database(getString(R.string.realtime_db_id))
         storage = Firebase.storage
@@ -53,8 +65,6 @@ class MainActivity : AppCompatActivity() {
         groupsViewModel = ViewModelProvider(this).get(GroupsViewModel::class.java)
         //authFirebase.createAccount("picobyte64@gmail.com", "amogus")
         //authGoogle.signIn()
-        //security guard
-        //trojan media
         //Note: A Google account's email address can change, so don't use it to identify a user. Instead, use the account's ID, which you can get on the client with GoogleSignInAccount.getId, and on the backend from the sub claim of the ID token.
     }
 
@@ -77,5 +87,16 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String?>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_GALLERY_CODE && grantResults.isNotEmpty()) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
+        }
     }
 }

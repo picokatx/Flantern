@@ -1,17 +1,29 @@
 package com.picobyte.flantern.adapters
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.R
 import com.picobyte.flantern.databinding.CardMessageBinding
-import com.picobyte.flantern.types.Message
-import com.picobyte.flantern.types.User
-import com.picobyte.flantern.types.getDate
+import com.picobyte.flantern.types.*
+import com.squareup.picasso.Picasso
+import java.io.InputStream
+import androidx.constraintlayout.widget.ConstraintSet
 
-class ChatAdapter(private val messagesUID: ArrayList<Pair<String, Message>>) :
+
+
+
+const val ONE_MEGABYTE: Long = 1000*1000
+class ChatAdapter(
+    private val groupUID: String,
+    private val messagesUID: ArrayList<Pair<String, Message>>
+) :
     RecyclerView.Adapter<ChatAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v: View = LayoutInflater.from(parent.context)
@@ -19,8 +31,8 @@ class ChatAdapter(private val messagesUID: ArrayList<Pair<String, Message>>) :
         return ViewHolder(v)
     }
 
-     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bindItems(messagesUID[position].second)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bindItems(groupUID, messagesUID[position].second)
     }
 
     override fun getItemCount(): Int {
@@ -29,7 +41,7 @@ class ChatAdapter(private val messagesUID: ArrayList<Pair<String, Message>>) :
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val binding = CardMessageBinding.bind(itemView)
-        fun bindItems(chp: Message) {
+        fun bindItems(groupUID: String, chp: Message) {
             val userMap = (itemView.context as MainActivity).userMap
             if (!userMap.containsKey(chp.user)) {
                 binding.nameField.text = "..."
@@ -41,6 +53,67 @@ class ChatAdapter(private val messagesUID: ArrayList<Pair<String, Message>>) :
             } else {
                 binding.nameField.text = userMap[chp.user]!!.name
             }
+            binding.testImage.visibility = View.GONE
+            binding.embedField.setOnClickListener {
+                if (chp.embed != null) {
+                    when (chp.embed.type) {
+                        EmbedType.IMAGE.ordinal -> {
+                            (itemView.context as MainActivity).storage.reference.child("$groupUID/${chp.embed.ref}.jpg")
+                                .getBytes(ONE_MEGABYTE).addOnCompleteListener {
+                                    Log.e("Flantern", "hello please set the image now")
+                                    (itemView.context as MainActivity).runOnUiThread {
+                                        binding.testImage.setImageBitmap(
+                                            BitmapFactory.decodeByteArray(it.result, 0, it.result.size)
+                                        )
+                                    }
+                                }
+                            binding.testImage.visibility = View.VISIBLE
+                        }
+                        EmbedType.VIDEO.ordinal -> {
+                        }
+                        EmbedType.AUDIO.ordinal -> {
+                        }
+                        EmbedType.DOCUMENT.ordinal -> {
+                        }
+                    }
+                }
+            }
+            Log.e("Flantern", chp.content + chp.embed)
+            if (chp.embed != null) {
+                binding.embedField.visibility = View.VISIBLE
+                when (chp.embed.type) {
+                    EmbedType.IMAGE.ordinal -> {
+                        binding.embedField.setImageResource(R.drawable.image_frame)
+                    }
+                    EmbedType.VIDEO.ordinal -> {
+                        binding.embedField.setImageResource(R.drawable.video)
+                    }
+                    EmbedType.AUDIO.ordinal -> {
+                        binding.embedField.setImageResource(R.drawable.audio)
+                    }
+                    EmbedType.DOCUMENT.ordinal -> {
+                        binding.embedField.setImageResource(R.drawable.document)
+                    }
+                }
+            } else {
+                binding.embedField.visibility = View.GONE
+            }
+            /*var test: Bitmap
+            if (chp.embed != null) {
+                when (chp.embed.type) {
+                    EmbedType.IMAGE.ordinal -> {
+                        (itemView.context as MainActivity).storage.reference.child("$groupUID/${chp.embed.ref}.jpg")
+                            .downloadUrl.addOnCompleteListener {
+                                Picasso.get().load(it.result).into(binding.imageField)
+                            }
+                        /*(itemView.context as MainActivity).runOnUiThread {
+                                    binding.imageField.setImageBitmap(BitmapFactory.decodeStream(stream))
+                                }*/
+                    }
+                }
+            } else {
+                binding.imageField.setImageResource(R.mipmap.flantern_logo_foreground)
+            }*/
             binding.contentField.text = chp.content
             binding.timestampField.text = getDate(chp.timestamp!!, "hh:mm:ss")
         }

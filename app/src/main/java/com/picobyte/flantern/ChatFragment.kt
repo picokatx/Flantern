@@ -1,5 +1,6 @@
 package com.picobyte.flantern
 
+import android.Manifest
 import android.R.attr
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -31,20 +32,50 @@ import com.google.firebase.database.DatabaseError
 import android.graphics.Bitmap.CompressFormat
 
 import android.R.attr.bitmap
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.opengl.Visibility
+import android.provider.MediaStore
+import android.view.ViewAnimationUtils
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.animation.doOnEnd
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.picobyte.flantern.types.Embed
 import com.picobyte.flantern.types.EmbedType
+import com.picobyte.flantern.types.Group
 import com.picobyte.flantern.wrappers.PagedRecyclerWrapper
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.util.*
+import kotlin.math.hypot
+import kotlin.math.round
+import kotlin.math.roundToInt
+import android.graphics.BitmapFactory
+
+import android.graphics.Bitmap
+import android.net.Uri
+import android.widget.ImageView
+import com.github.tcking.giraffecompressor.GiraffeCompressor
+import java.io.*
+import java.net.URI
 
 
 class ChatFragment : Fragment() {
-    //lateinit var adapter: ChatAdapter
-    //lateinit var lastKey: String
-    //var isLiveLoaded: Boolean = false
-    //var entryTime: Long = 0
     lateinit var pagedRecycler: PagedRecyclerWrapper<Message>
+    var imageURI: Uri = Uri.EMPTY
+    val galleryLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            if (result.data != null) {
+                imageURI = result.data!!.data!!
+            }
+        }
+
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -55,35 +86,109 @@ class ChatFragment : Fragment() {
         val layoutManager = LinearLayoutManager(requireActivity())
         recyclerView.layoutManager = layoutManager
         val messagesUID: ArrayList<Pair<String, Message>> = ArrayList<Pair<String, Message>>()
-        val adapter: ChatAdapter = ChatAdapter(messagesUID)
         val groupUID: String = arguments?.getString("group_uid")!!
+        val adapter: ChatAdapter = ChatAdapter(groupUID, messagesUID)
+        binding.attachContainer.visibility = View.INVISIBLE
+        binding.attachBtn.setOnClickListener {
+            val cx = (binding.attachBtn.x + binding.attachBtn.width / 2).roundToInt()
+            val cy = (binding.attachContainer.y + binding.attachBtn.height).roundToInt()
+            val finalRadius = hypot(cx.toDouble(), cy.toDouble()).toFloat()
+            if (binding.attachContainer.visibility == View.INVISIBLE) {
+                binding.attachContainer.visibility = View.VISIBLE
+                ViewAnimationUtils.createCircularReveal(
+                    binding.attachContainer,
+                    cx,
+                    cy,
+                    0f,
+                    finalRadius
+                ).start()
+            } else {
+                val anim = ViewAnimationUtils.createCircularReveal(
+                    binding.attachContainer,
+                    cx,
+                    cy,
+                    finalRadius,
+                    0f
+                )
+                anim.doOnEnd {
+                    binding.attachContainer.visibility = View.INVISIBLE
+                }
+                anim.start()
+            }
+        }
+        binding.attachImage.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val intent = Intent(
+                    Intent.ACTION_PICK,
+                    MediaStore.Images.Media.INTERNAL_CONTENT_URI
+                )
+
+                galleryLauncher.launch(intent)
+            }
+        }
+        val groupRef =
+            (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID")
+        groupRef.get().addOnCompleteListener {
+            val group = it.result.getValue(Group::class.java)!!
+            binding.topBarTitle.text = group.name
+            binding.topBarSubtitle.text = group.description
+            binding.topBarIcon.setImageResource(R.mipmap.flantern_logo_foreground)
+        }
+
         val ref =
             (requireActivity() as MainActivity).rtDatabase.getReference("/group_messages/$groupUID")
         pagedRecycler = PagedRecyclerWrapper<Message>(
+            groupUID,
             adapter as RecyclerView.Adapter<RecyclerView.ViewHolder>,
             recyclerView,
             ref,
             Message::class.java,
             messagesUID,
-            8
+            16
         )
         pagedRecycler.initializePager()
         pagedRecycler.addItemListener()
         binding.testSend.setOnClickListener {
             val timestamp = System.currentTimeMillis()
+            var embed: Embed? = null
+            if (imageURI != Uri.EMPTY) {
+                val embedUUID = UUID.randomUUID().toString()
+                if (context!!.contentResolver.getType(imageURI) == "video/mp4") {
+                    GiraffeCompressor.create().input(File(imageURI.path!!))
+                    embed = Embed(EmbedType.VIDEO.ordinal, embedUUID)
+                } else if (context!!.contentResolver.getType(imageURI) == "image/jpeg") {
+                    val outputStream = ByteArrayOutputStream()
+                    BitmapFactory.decodeStream(
+                        this.context!!.contentResolver.openInputStream(
+                            imageURI
+                        )!!
+                    )
+                        .compress(CompressFormat.JPEG, 10, outputStream)
+                    (this.context as MainActivity).storage.getReference("$groupUID/$embedUUID.jpg")
+                        .putBytes(
+                            outputStream.toByteArray()
+                        )
+                }
+                embed = Embed(EmbedType.IMAGE.ordinal, embedUUID)
+                imageURI = Uri.EMPTY
+            }
             val message = Message(
                 Firebase.auth.uid!!,
                 binding.editText.text.toString(),
                 timestamp,
                 null,
-                false
+                false,
+                embed
             )
             pagedRecycler.addItem(message)
             binding.editText.setText("")
         }
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                Log.e("Flantern", pagedRecycler.repo.size.toString())
+                Log.e("Flantern page size", pagedRecycler.repo.size.toString())
                 if (layoutManager.findFirstCompletelyVisibleItemPosition() <= pagedRecycler.pageLength - 1) {
                     pagedRecycler.pageUp()
                 } else if (layoutManager.findLastCompletelyVisibleItemPosition() >= pagedRecycler.repo.size - pagedRecycler.pageLength - 1) {

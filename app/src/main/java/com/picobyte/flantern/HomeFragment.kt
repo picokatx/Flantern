@@ -20,6 +20,7 @@ class HomeFragment: Fragment() {
         val binding = inflater.inflate(R.layout.fragment_home, container, false)
         val viewPager = binding.findViewById<ViewPager2>(R.id.home_view_pager)
         val tabLayout = binding.findViewById<TabLayout>(R.id.home_tab_layout)
+        
         val adapter = HomeAdapter(
             (binding.rootView.context as AppCompatActivity).supportFragmentManager,
             lifecycle

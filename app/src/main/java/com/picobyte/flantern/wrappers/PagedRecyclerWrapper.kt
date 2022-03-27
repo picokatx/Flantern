@@ -1,19 +1,24 @@
 package com.picobyte.flantern.wrappers
 
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.picobyte.flantern.MainActivity
+import com.picobyte.flantern.types.EmbedType
+import com.picobyte.flantern.types.Message
 import com.picobyte.flantern.types.MessageEdit
 import kotlin.collections.ArrayList
 
 class PagedRecyclerWrapper<T>(
+    val groupUID: String,
     val adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>,
     val recycler: RecyclerView,
     val ref: DatabaseReference,
-    val dataType: Class<T>,
+    val type: Class<T>,
     val repo: ArrayList<Pair<String, T>>,
     val pageLength: Int
 ) {
@@ -22,15 +27,27 @@ class PagedRecyclerWrapper<T>(
     val live: ArrayList<Pair<String, T>> = ArrayList<Pair<String, T>>()
     lateinit var liveKey: String
     var isLiveLoaded: Boolean = false
-
     fun initializePager() {
         ref.child("static").orderByKey().limitToLast(pageLength).get().addOnCompleteListener {
             if (it.result.children.toList().isNotEmpty()) {
                 lastKey = it.result.children.first().key!!
+
                 firstKey = it.result.children.last().key!!
                 liveKey = it.result.children.first().key!!
                 it.result.children.forEach { msg ->
-                    repo.add(Pair(msg.key!!, msg.getValue(dataType)!!))
+
+                    val msg = Pair(msg.key!!, msg.getValue(type)!!)
+                    /*if (msg.second.embed!=null) {
+                        when (msg.second.embed!!.type) {
+                            EmbedType.IMAGE.ordinal -> {
+                                (recycler.context as MainActivity).storage.reference.child("$groupUID/${msg.second.embed!!.ref}.jpg")
+                                    .getStream { state, stream ->
+                                        msg.second.embedRaw = BitmapFactory.decodeStream(stream)
+                                    }
+                            }
+                        }
+                    }*/
+                    repo.add(msg)
                     adapter.notifyItemInserted(repo.size)
                 }
                 live.addAll(repo)
@@ -45,7 +62,19 @@ class PagedRecyclerWrapper<T>(
                     firstKey = it.result.children.last().key!!
                     it.result.children.forEach { msg ->
                         Log.e("Flantern", msg.key!!)
-                        repo.add(Pair(msg.key!!, msg.getValue(dataType)!!))
+                        val msg = Pair(msg.key!!, msg.getValue(type)!!)
+                        /*if (msg.second.embed!=null) {
+                            when (msg.second.embed!!.type) {
+                                EmbedType.IMAGE.ordinal -> {
+                                    (recycler.context as MainActivity).storage.reference.child("$groupUID/${msg.second.embed!!.ref}.jpg")
+                                        .getStream { state, stream ->
+                                            msg.second.embedRaw = BitmapFactory.decodeStream(stream)
+                                        }
+                                }
+                            }
+                        }*/
+                        repo.add(msg)
+
                         adapter.notifyItemInserted(repo.size)
                     }
                 }
@@ -64,7 +93,18 @@ class PagedRecyclerWrapper<T>(
                     lastKey = it.result.children.first().key!!
                     it.result.children.reversed().forEach { msg ->
                         Log.e("Flantern", msg.key!!)
-                        repo.add(0, Pair(msg.key!!, msg.getValue(dataType)!!))
+                        val msg = Pair(msg.key!!, msg.getValue(type)!!)
+                        /*if (msg.second.embed!=null) {
+                            when (msg.second.embed!!.type) {
+                                EmbedType.IMAGE.ordinal -> {
+                                    (recycler.context as MainActivity).storage.reference.child("$groupUID/${msg.second.embed!!.ref}.jpg")
+                                        .getStream { state, stream ->
+                                            msg.second.embedRaw = BitmapFactory.decodeStream(stream)
+                                        }
+                                }
+                            }
+                        }*/
+                        repo.add(0, msg)
                         adapter.notifyItemInserted(0)
                     }
                 }
@@ -100,13 +140,24 @@ class PagedRecyclerWrapper<T>(
                         when (snapshot.getValue(Int::class.java)) {
                             MessageEdit.ADD.ordinal -> {
                                 ref.child("static/${snapshot.key}").get().addOnCompleteListener {
-                                    val temp = Pair(it.result.key!!, it.result.getValue(dataType)!!)
+                                    val temp = Pair(it.result.key!!, it.result.getValue(type)!!)
+                                    /*if (temp.second.embed!=null) {
+                                        when (temp.second.embed!!.type) {
+                                            EmbedType.IMAGE.ordinal -> {
+                                                (recycler.context as MainActivity).storage.reference.child("$groupUID/${temp.second.embed!!.ref}.jpg")
+                                                    .getStream { state, stream ->
+                                                        temp.second.embedRaw = BitmapFactory.decodeStream(stream)
+                                                    }
+                                            }
+                                        }
+                                    }*/
                                     live.add(temp)
                                     live.removeAt(0)
                                     liveKey = live[0].first
                                     if (firstKey.compareTo(liveKey) > 0) {
                                         Log.e("Flantern", "Program is moving you to the bottom")
                                         repo.add(temp)
+                                        firstKey = temp.first
                                         adapter.notifyItemInserted(adapter.itemCount)
                                         recycler.scrollToPosition(adapter.itemCount - 1)
                                     } else {
@@ -138,7 +189,7 @@ class PagedRecyclerWrapper<T>(
                                             .addOnCompleteListener {
                                                 repo[i] = Pair(
                                                     snapshot.key!!,
-                                                    it.result.getValue(dataType)!!
+                                                    it.result.getValue(type)!!
                                                 )
                                                 adapter.notifyItemChanged(i)
                                             }
