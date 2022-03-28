@@ -18,4 +18,5 @@
     <color name="button_focus_primary">#FFBF37FF</color>
     <color name="label_text_danger">#FFFF4040</color>
     <color name="label_text_admin">#FF0085FF</color>
+    <color name="status_active">#22DD22</color>
 </resources>

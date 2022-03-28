@@ -58,6 +58,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.ImageView
 import com.github.tcking.giraffecompressor.GiraffeCompressor
+import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateWithBundle
 import java.io.*
 import java.net.URI
 
@@ -116,6 +118,12 @@ class ChatFragment : Fragment() {
                 anim.start()
             }
         }
+        binding.topBarBack.setOnClickListener {
+            navigateTo(binding.root, R.id.action_global_HomeFragment)
+        }
+        binding.topbar.setOnClickListener {
+
+        }
         binding.attachImage.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
                     requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
@@ -135,9 +143,26 @@ class ChatFragment : Fragment() {
             val group = it.result.getValue(Group::class.java)!!
             binding.topBarTitle.text = group.name
             binding.topBarSubtitle.text = group.description
-            binding.topBarIcon.setImageResource(R.mipmap.flantern_logo_foreground)
+            if (group.profile != null) {
+                (context as MainActivity).storage.getReference("$groupUID/${group.profile}.jpg")
+                    .getBytes(1000 * 1000).addOnCompleteListener { image ->
+                        binding.topBarIcon.setImageBitmap(
+                            BitmapFactory.decodeByteArray(
+                                image.result,
+                                0,
+                                image.result.size
+                            )
+                        )
+                    }
+            } else {
+                binding.topBarIcon.setImageResource(R.mipmap.flantern_logo_foreground)
+            }
         }
-
+        binding.topBarTitle.setOnClickListener {
+            val bundle = Bundle()
+            bundle.putString("group_uid", groupUID)
+            navigateWithBundle(binding.root, R.id.action_global_ChatDetailsFragment, bundle)
+        }
         val ref =
             (requireActivity() as MainActivity).rtDatabase.getReference("/group_messages/$groupUID")
         pagedRecycler = PagedRecyclerWrapper<Message>(

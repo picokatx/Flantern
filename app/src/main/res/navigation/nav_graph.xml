@@ -51,4 +51,12 @@
     <action
         android:id="@+id/action_global_ChatFragment"
         app:destination="@id/ChatFragment" />
+    <fragment
+        android:id="@+id/ChatDetailsFragment"
+        android:name="com.picobyte.flantern.ChatDetailsFragment"
+        android:label="ChatDetailsFragment"
+        tools:layout="@layout/fragment_chat_details" />
+    <action
+        android:id="@+id/action_global_ChatDetailsFragment"
+        app:destination="@id/ChatDetailsFragment" />
 </navigation>

@@ -15,11 +15,8 @@ import com.picobyte.flantern.types.*
 import com.squareup.picasso.Picasso
 import java.io.InputStream
 import androidx.constraintlayout.widget.ConstraintSet
+import com.picobyte.flantern.utils.ONE_MEGABYTE
 
-
-
-
-const val ONE_MEGABYTE: Long = 1000*1000
 class ChatAdapter(
     private val groupUID: String,
     private val messagesUID: ArrayList<Pair<String, Message>>

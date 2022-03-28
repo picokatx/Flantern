@@ -10,8 +10,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.picobyte.flantern.adapters.HomeAdapter
-class HomeFragment: Fragment() {
-    private val tabs = arrayOf("CHATS","THREADS","FEED")
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.launch
+
+class HomeFragment : Fragment() {
+    private val tabs = arrayOf("CHATS", "THREADS", "FEED")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -20,7 +25,6 @@ class HomeFragment: Fragment() {
         val binding = inflater.inflate(R.layout.fragment_home, container, false)
         val viewPager = binding.findViewById<ViewPager2>(R.id.home_view_pager)
         val tabLayout = binding.findViewById<TabLayout>(R.id.home_tab_layout)
-        
         val adapter = HomeAdapter(
             (binding.rootView.context as AppCompatActivity).supportFragmentManager,
             lifecycle
