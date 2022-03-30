@@ -12,7 +12,7 @@ class FeedFragment: Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val binding: FragmentFeedBinding = FragmentFeedBinding.inflate(inflater,container,false)
         return binding.root
     }

@@ -20,12 +20,13 @@
         android:id="@+id/content_field"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="loading"
         android:textColor="?attr/android:textColorPrimary"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/embed_field"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/name_field" />
 
     <TextView
         android:id="@+id/timestamp_field"
@@ -48,12 +49,11 @@
 
     <ImageView
         android:id="@+id/test_image"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="wrap_content"
+        android:layout_height="300dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/content_field"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/name_field"
+        app:layout_constraintTop_toBottomOf="@id/content_field"
         app:srcCompat="@drawable/document" />
 
     <VideoView
@@ -61,8 +61,7 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/content_field"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/name_field" />
+        app:layout_constraintTop_toBottomOf="@id/content_field" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

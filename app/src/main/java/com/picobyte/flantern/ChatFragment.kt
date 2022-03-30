@@ -67,6 +67,7 @@ import java.net.URI
 class ChatFragment : Fragment() {
     lateinit var pagedRecycler: PagedRecyclerWrapper<Message>
     var imageURI: Uri = Uri.EMPTY
+    var audioURI: Uri = Uri.EMPTY
     val galleryLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -75,7 +76,15 @@ class ChatFragment : Fragment() {
                 imageURI = result.data!!.data!!
             }
         }
-
+    }
+    val audioLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            if (result.data != null) {
+                audioURI = result.data!!.data!!
+            }
+        }
     }
 
     override fun onCreateView(
@@ -133,12 +142,25 @@ class ChatFragment : Fragment() {
                     Intent.ACTION_PICK,
                     MediaStore.Images.Media.INTERNAL_CONTENT_URI
                 )
-
                 galleryLauncher.launch(intent)
             }
         }
+        binding.attachAudio.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val intent = Intent(
+                    Intent.ACTION_PICK,
+                    MediaStore.Audio.Media.INTERNAL_CONTENT_URI
+                )
+                galleryLauncher.launch(intent)
+            }
+
+        }
         val groupRef =
-            (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID")
+            (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
+        Log.e("Flantern", groupRef.toString())
         groupRef.get().addOnCompleteListener {
             val group = it.result.getValue(Group::class.java)!!
             binding.topBarTitle.text = group.name
@@ -166,7 +188,6 @@ class ChatFragment : Fragment() {
         val ref =
             (requireActivity() as MainActivity).rtDatabase.getReference("/group_messages/$groupUID")
         pagedRecycler = PagedRecyclerWrapper<Message>(
-            groupUID,
             adapter as RecyclerView.Adapter<RecyclerView.ViewHolder>,
             recyclerView,
             ref,

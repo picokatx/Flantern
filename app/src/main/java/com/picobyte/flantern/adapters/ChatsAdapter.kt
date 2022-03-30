@@ -1,6 +1,7 @@
 package com.picobyte.flantern.adapters
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,7 +28,7 @@ import com.picobyte.flantern.types.Message
 import com.picobyte.flantern.utils.navigateTo
 import com.picobyte.flantern.utils.navigateWithBundle
 
-class ChatsAdapter(val groups_UID: ArrayList<String>) :
+class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String,String>, Group>>) :
     RecyclerView.Adapter<ChatsAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v: View = LayoutInflater.from(parent.context)
@@ -36,10 +37,12 @@ class ChatsAdapter(val groups_UID: ArrayList<String>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val ref = (holder.binding.root.context as MainActivity).rtDatabase.getReference("/groups/${groups_UID[position]}")
+        holder.bindItems(groups_UID[position].second, groups_UID[position].first.second)
+        /*val ref = (holder.binding.root.context as MainActivity).rtDatabase.getReference("/groups/${groups_UID[position]}/static")
+        Log.e("Flantenr", ref.toString())
         ref.get().addOnCompleteListener {
             holder.bindItems(it.result.getValue(Group::class.java)!!, ref.key!!)
-        }
+        }*/
     }
 
     override fun getItemCount() = groups_UID.size

@@ -42,7 +42,7 @@ class ChatAdapter(
             val userMap = (itemView.context as MainActivity).userMap
             if (!userMap.containsKey(chp.user)) {
                 binding.nameField.text = "..."
-                (itemView.context as MainActivity).rtDatabase.getReference("/user/${chp.user}")
+                (itemView.context as MainActivity).rtDatabase.getReference("/user/${chp.user}/static")
                     .get().addOnCompleteListener {
                         userMap[chp.user!!] = it.result.getValue(User::class.java)!!
                         binding.nameField.text = userMap[chp.user]!!.name
