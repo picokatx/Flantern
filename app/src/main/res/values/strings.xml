@@ -17,4 +17,11 @@
 
     <string name="web_client_id">217248892282-cjrr8bt27krru9pgdc9380ce1nm2dvm6.apps.googleusercontent.com</string>
     <string name="realtime_db_id">https://flantern-ea117-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+    <string-array name="status_array">
+        <item>Idle</item>
+        <item>Sleep</item>
+        <item>Active</item>
+        <item>Do Not Disturb</item>
+    </string-array>
+
 </resources>

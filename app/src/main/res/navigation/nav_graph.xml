@@ -59,4 +59,36 @@
     <action
         android:id="@+id/action_global_ChatDetailsFragment"
         app:destination="@id/ChatDetailsFragment" />
+    <fragment
+        android:id="@+id/ItemSelectFragment"
+        android:name="com.picobyte.flantern.ItemSelectFragment"
+        android:label="ItemSelectFragment"
+        tools:layout="@layout/fragment_item_select" />
+    <action
+        android:id="@+id/action_global_ItemSelectFragment"
+        app:destination="@id/ItemSelectFragment" />
+    <fragment
+        android:id="@+id/AddContactFragment"
+        android:name="com.picobyte.flantern.AddContactFragment"
+        android:label="AddContactFragment"
+        tools:layout="@layout/fragment_add_contact" />
+    <action
+        android:id="@+id/action_global_AddContactFragment"
+        app:destination="@id/AddContactFragment" />
+    <fragment
+        android:id="@+id/EditGroupFragment"
+        android:name="com.picobyte.flantern.EditGroupFragment"
+        android:label="EditGroupFragment"
+        tools:layout="@layout/fragment_edit_group" />
+    <action
+        android:id="@+id/action_global_EditGroupFragment"
+        app:destination="@id/EditGroupFragment" />
+    <fragment
+        android:id="@+id/SettingsFragment"
+        android:name="com.picobyte.flantern.SettingsFragment"
+        android:label="SettingsFragment"
+        tools:layout="@layout/fragment_settings" />
+    <action
+        android:id="@+id/action_global_SettingsFragment"
+        app:destination="@id/SettingsFragment" />
 </navigation>

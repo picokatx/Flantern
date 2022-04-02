@@ -154,8 +154,10 @@ class ChatFragment : Fragment() {
                     Intent.ACTION_PICK,
                     MediaStore.Audio.Media.INTERNAL_CONTENT_URI
                 )
-                galleryLauncher.launch(intent)
+                audioLauncher.launch(intent)
             }
+        }
+        binding.attachDocument.setOnClickListener {
 
         }
         val groupRef =

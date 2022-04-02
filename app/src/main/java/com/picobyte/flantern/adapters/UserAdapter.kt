@@ -40,6 +40,7 @@ class UserAdapter(
         val binding = CardUserBinding.bind(itemView)
         fun bindItems(key: String, user: User, selectable: SelectableType, selected: ArrayList<String>) {
             if (selectable == SelectableType.MULTI) {
+                binding.root.isClickable = true
                 binding.root.setOnClickListener {
                     val idx = selected.indexOf(key)
                     if (idx == -1) {
@@ -49,8 +50,13 @@ class UserAdapter(
                     }
                 }
             } else if (selectable == SelectableType.SINGLE) {
+                binding.root.isClickable = true
                 binding.root.setOnClickListener {
-                    selected[0] = key
+                    if (selected.size==0) {
+                        selected.add(key)
+                    } else {
+                        selected[0] = key
+                    }
                 }
             }
             binding.userName.text = user.name

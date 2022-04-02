@@ -2,11 +2,10 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorPrimaryContainer"
-    tools:context="ItemSelectFragment">
+    tools:context=".SettingsFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topbar"
@@ -57,7 +56,7 @@
             android:layout_marginBottom="4dp"
             android:ellipsize="end"
             android:singleLine="true"
-            android:text="loading"
+            android:text="Edit Group"
             android:textColor="?attr/android:textColorSecondary"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -65,27 +64,65 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/itemRecycler"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+    <ImageView
+        android:id="@+id/settings_profile"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topbar"
-        app:layout_constraintVertical_bias="1.0" />
+        app:srcCompat="@drawable/image_frame" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/proceed"
+    <EditText
+        android:id="@+id/settings_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:gravity="start|top"
+        android:hint="name"
+        android:singleLine="true"
+        android:textColor="?attr/android:textColorPrimary"
+        android:textColorHint="?attr/android:textColorSecondary"
+        app:layout_constraintStart_toEndOf="@+id/settings_profile"
+        app:layout_constraintTop_toBottomOf="@+id/topbar" />
+
+    <EditText
+        android:id="@+id/settings_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:gravity="start|top"
+        android:hint="description"
+        android:inputType="textMultiLine"
+        android:textColor="?attr/android:textColorPrimary"
+        android:textColorHint="?attr/android:textColorSecondary"
+        app:layout_constraintStart_toEndOf="@+id/settings_profile"
+        app:layout_constraintTop_toBottomOf="@+id/settings_name" />
+
+    <Spinner
+        android:id="@+id/settings_status"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:minHeight="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/settings_profile"
+        app:layout_constraintTop_toBottomOf="@+id/settings_description" />
+
+    <Button
+        android:id="@+id/confirmBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:clickable="true"
+        android:text="Confirm Changes"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/arrow_right"
-        tools:ignore="SpeakableTextPresentCheck" />
-
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

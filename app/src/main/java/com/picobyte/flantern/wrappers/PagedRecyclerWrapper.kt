@@ -102,7 +102,7 @@ class PagedRecyclerWrapper<T>(
                                     live.add(temp)
                                     live.removeAt(0)
                                     liveKey = live[0].first
-                                    if (firstKey.compareTo(liveKey) > 0) {
+                                    if (firstKey.compareTo(liveKey) >= 0) {
                                         Log.e("Flantern", "Program is moving you to the bottom")
                                         repo.add(temp)
                                         firstKey = temp.first

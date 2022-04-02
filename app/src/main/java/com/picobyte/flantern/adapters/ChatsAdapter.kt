@@ -25,6 +25,7 @@ import com.google.gson.Gson
 import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.db.GroupsViewModel
 import com.picobyte.flantern.types.Message
+import com.picobyte.flantern.types.getDate
 import com.picobyte.flantern.utils.navigateTo
 import com.picobyte.flantern.utils.navigateWithBundle
 
@@ -55,8 +56,10 @@ class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String,String>, Group>>) 
                 navigateWithBundle(binding.root, R.id.action_global_ChatFragment, bundle)
             }
             binding.chatName.text = chp.name
-            binding.chatRecent.text = "${chp.recent?.user}: ${chp.recent?.content}"
-            binding.chatRecentDate.text = chp.recent?.timestamp.toString()
+            if (chp.recent!=null) {
+                binding.chatRecent.text = "${chp.recent?.user}: ${chp.recent?.content}"
+                binding.chatRecentDate.text = getDate(chp.recent!!.timestamp!!, "hh:mm:ss")
+            }
         }
     }
 }

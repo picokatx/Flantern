@@ -7,24 +7,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.picobyte.flantern.types.DatabaseOp
-import com.picobyte.flantern.types.MessageEdit
 
-/*
-* How this should function:
-* On initial load of recycler, get all data from rt database and keep in memory
-* add child event listener and update recycler accordingly. live reference will
-* also be updated by the listener
-* references should follow this format
-* ref/live/{key}: 0
-* ref/static/{key} Item::class.java
-*e.g.
-* user/live/iEz2njgwkyOHKdI0C1biNRTwSTZ2: 0
-* user/static/iEz2njgwkyOHKdI0C1biNRTwSTZ2/User::class.java
-*
-* group_users/{group_uid}/has/live/iEz2njgwkyOHKdI0C1biNRTwSTZ2: 0
-* group_users/{group_uid}/has/static/iEz2njgwkyOHKdI0C1biNRTwSTZ2: true
-*/
-class FullLoadRecyclerWrapper<T>(
+class UserContactRecyclerWrapper<T>(
     val adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>,
     val recycler: RecyclerView,
     val keyRef: DatabaseReference,
@@ -48,8 +32,8 @@ class FullLoadRecyclerWrapper<T>(
                 it.result.children.forEach { entry ->
                     val key = entry.getValue(String::class.java)!!
                     Log.e("Flantern: key, ", key)
-                    dataRef.child("${key}/static").get().addOnCompleteListener { user ->
-                        val userKeyPair = Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
+                    dataRef.child("${entry.key}/static").get().addOnCompleteListener { user ->
+                        val userKeyPair = Pair(Pair(key, entry.key!!), user.result.getValue(type)!!)
                         repo.add(userKeyPair)
                         adapter.notifyItemInserted(repo.size)
                     }
@@ -66,8 +50,8 @@ class FullLoadRecyclerWrapper<T>(
                     firstKey = it.result.children.last().key!!
                     it.result.children.forEach { entry ->
                         val key = entry.getValue(String::class.java)!!
-                        dataRef.child("${key}/static").get().addOnCompleteListener { user ->
-                            val userKeyPair = Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
+                        dataRef.child("${entry.key}/static").get().addOnCompleteListener { user ->
+                            val userKeyPair = Pair(Pair(key, entry.key!!), user.result.getValue(type)!!)
                             repo.add(userKeyPair)
                             adapter.notifyItemInserted(repo.size)
                         }
@@ -88,8 +72,8 @@ class FullLoadRecyclerWrapper<T>(
                     lastKey = it.result.children.first().key!!
                     it.result.children.reversed().forEach { entry ->
                         val key = entry.getValue(String::class.java)!!
-                        dataRef.child("${key}/static").get().addOnCompleteListener { user ->
-                            val userKeyPair = Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
+                        dataRef.child("${entry.key}/static").get().addOnCompleteListener { user ->
+                            val userKeyPair = Pair(Pair(key, entry.key!!), user.result.getValue(type)!!)
                             repo.add(0, userKeyPair)
                             adapter.notifyItemInserted(0)
                         }
@@ -124,10 +108,10 @@ class FullLoadRecyclerWrapper<T>(
                             DatabaseOp.ADD.ordinal -> {
                                 keyRef.child("static/${snapshot.key}").get().addOnCompleteListener {
                                     val key = it.result.getValue(String::class.java)!!
-                                    dataRef.child("${key}/static").get()
+                                    dataRef.child("${it.result.key}/static").get()
                                         .addOnCompleteListener { data ->
                                             val userKeyPair =
-                                                Pair(Pair(snapshot.key!!, key), data.result.getValue(type)!!)
+                                                Pair(Pair(key, snapshot.key!!), data.result.getValue(type)!!)
                                             live.add(userKeyPair)
                                             live.removeAt(0)
                                             liveKey = live[0].first.first
@@ -156,10 +140,10 @@ class FullLoadRecyclerWrapper<T>(
                                         keyRef.child("static/${snapshot.key}").get()
                                             .addOnCompleteListener {
                                                 val key = it.result.getValue(String::class.java)!!
-                                                dataRef.child("${key}/static").get()
+                                                dataRef.child("${it.result.key}/static").get()
                                                     .addOnCompleteListener { item ->
                                                         repo[i] = Pair(
-                                                            Pair(snapshot.key!!, key),
+                                                            Pair(key, snapshot.key!!),
                                                             item.result.getValue(type)!!
                                                         )
                                                         adapter.notifyItemChanged(i)

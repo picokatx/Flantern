@@ -1,10 +1,13 @@
 package com.picobyte.flantern
 
+import android.content.DialogInterface
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -13,15 +16,15 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.picobyte.flantern.adapters.UserAdapter
 import com.picobyte.flantern.databinding.FragmentChatDetailsBinding
-import com.picobyte.flantern.types.Group
-import com.picobyte.flantern.types.User
-import com.picobyte.flantern.types.getDate
+import com.picobyte.flantern.types.*
 import com.picobyte.flantern.utils.ONE_MEGABYTE
+import com.picobyte.flantern.utils.navigateWithBundle
 import com.picobyte.flantern.wrappers.FullLoadRecyclerWrapper
 import com.picobyte.flantern.wrappers.PagedRecyclerWrapper
 
 class ChatDetailsFragment : Fragment() {
     lateinit var pagedRecycler: FullLoadRecyclerWrapper<User>
+    lateinit var groupName: String
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -29,10 +32,26 @@ class ChatDetailsFragment : Fragment() {
     ): View {
         val binding = FragmentChatDetailsBinding.inflate(inflater, container, false)
         val groupUID: String = arguments?.getString("group_uid")!!
+        val newContacts = arguments?.getStringArrayList("user_contacts")!!
+        val groupUsersRef =
+            (requireActivity() as MainActivity).rtDatabase.getReference("/group_users/$groupUID/has")
+        if (newContacts.isNotEmpty()) {
+            for (i in newContacts) {
+                val groupUsersKey = groupUsersRef.child("static").push().key
+                groupUsersRef.child("static/$groupUsersKey").setValue(i)
+                groupUsersRef.child("live/$groupUsersKey").setValue(DatabaseOp.ADD)
+                val userRef =
+                    (requireActivity() as MainActivity).rtDatabase.getReference("/user_groups/$i/has")
+                val userGroupsKey = groupUsersRef.child("static").push().key
+                userRef.child("static/$userGroupsKey").setValue(groupUID)
+                userRef.child("live/$userGroupsKey").setValue(DatabaseOp.ADD)
+            }
+        }
         val groupRef =
             (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
         groupRef.get().addOnCompleteListener {
             val group = it.result.getValue(Group::class.java)!!
+            groupName = group.name!!
             binding.topBarTitle.text = group.name
             binding.topBarDescription.text = group.description
             binding.topBarCreated.text = getDate(group.created!!, "dd/MM/yy")
@@ -50,7 +69,8 @@ class ChatDetailsFragment : Fragment() {
             } else {
                 binding.topBarIcon.setImageResource(R.mipmap.flantern_logo_foreground)
             }
-            val usersUID: ArrayList<Pair<Pair<String, String>, User>> = ArrayList<Pair<Pair<String, String>, User>>()
+            val usersUID: ArrayList<Pair<Pair<String, String>, User>> =
+                ArrayList<Pair<Pair<String, String>, User>>()
             val adapter: UserAdapter = UserAdapter(usersUID)
             val layoutManager = LinearLayoutManager(requireActivity())
             binding.membersBarContent.layoutManager = layoutManager
@@ -71,13 +91,65 @@ class ChatDetailsFragment : Fragment() {
             pagedRecycler.initializePager()
             pagedRecycler.addItemListener()
             binding.membersBarAdd.setOnClickListener {
-                //todo: add member select fragment (and arbitrary item select fragment)
+                val bundle = Bundle()
+                bundle.putInt("type", RecyclableType.CONTACTS.ordinal)
+                bundle.putString(
+                    "title_text",
+                    (context as MainActivity).authGoogle.getDisplayName()
+                )
+                bundle.putString("subtitle_text", "Add Group Members")
+                bundle.putString("user_uid", (context as MainActivity).authGoogle.getUID())
+                bundle.putInt("destination", R.id.action_global_ChatFragment)
+                val destBundle = Bundle()
+                destBundle.putString("group_uid", groupUID)
+                bundle.putBundle("destination_bundle", destBundle)
+                navigateWithBundle(binding.root, R.id.action_global_ItemSelectFragment, bundle)
+            }
+            binding.membersBarInvite.setOnClickListener {
+                val code = (requireActivity() as MainActivity).adjectives.random() +
+                        (requireActivity() as MainActivity).animals.random()
+                (requireActivity() as MainActivity).rtDatabase.getReference("/group_invites/$code")
+                    .setValue(groupUID)
             }
             binding.actionBarExit.setOnClickListener {
-                //todo: add way to commit quit
+                val builder = AlertDialog.Builder(context!!)
+                builder.setMessage("Are you sure you want to exit the group")
+                    .setPositiveButton("Stay",
+                        DialogInterface.OnClickListener { dialog, id ->
+                            //Toast.makeText(context, "")
+                        })
+                    .setNegativeButton("Leave",
+                        DialogInterface.OnClickListener { dialog, id ->
+                            val uid = (requireActivity() as MainActivity).authGoogle.getUID()
+                            groupUsersRef.child("static").equalTo(uid).get()
+                                .addOnCompleteListener { user ->
+                                    for (i in user.result.children) {
+                                        groupUsersRef.child("static/${i.key}").removeValue()
+                                        groupUsersRef.child("live/${i.key}")
+                                            .setValue(DatabaseOp.DELETE)
+                                    }
+                                }
+                            (requireActivity() as MainActivity).rtDatabase.getReference("/user_groups/$uid/has/static")
+                                .equalTo(groupUID).get().addOnCompleteListener { user ->
+                                    var testNum = 0
+                                    for (i in user.result.children) {
+                                        testNum++
+                                        groupUsersRef.child("live/${i.key}")
+                                            .setValue(DatabaseOp.DELETE)
+                                        i.ref.removeValue()
+                                    }
+                                    if (testNum > 0) {
+                                        Toast.makeText(
+                                            context,
+                                            "You left $groupName",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                        })
+                builder.create().show()
             }
         }
-
         return binding.root
     }
 }
