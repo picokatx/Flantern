@@ -18,11 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.picobyte.flantern.databinding.FragmentEditGroupBinding
-import com.picobyte.flantern.db.GroupsViewModel
-import com.picobyte.flantern.types.DatabaseOp
 import com.picobyte.flantern.types.Group
 import com.picobyte.flantern.types.GroupEdit
-import com.picobyte.flantern.types.Message
 import com.picobyte.flantern.utils.navigateTo
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -59,7 +56,21 @@ class EditGroupFragment : Fragment() {
         val contacts = arguments?.getStringArrayList("user_contacts")!!
         val groupUID = arguments?.getString("group_uid")
         if (groupUID != null) {
-            (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
+            (context as MainActivity).requests.getGroup(groupUID, {
+                binding.groupNameField.setText(it.name)
+                binding.groupDescField.setText(it.description)
+                if (it.profile != null) {
+                    (context as MainActivity).requests.getGroupMediaBitmap(
+                        it.profile,
+                        groupUID,
+                        { bitmap ->
+                            binding.groupProfileField.setImageBitmap(bitmap)
+                        })
+                }
+            }, {
+
+            })
+            /*(requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
                 .get().addOnCompleteListener {
                     val group = it.result.getValue(Group::class.java)!!
                     binding.groupNameField.setText(group.name)
@@ -76,7 +87,7 @@ class EditGroupFragment : Fragment() {
                                 )
                             }
                     }
-                }
+                }*/
         }
         binding.groupProfileField.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
@@ -93,9 +104,29 @@ class EditGroupFragment : Fragment() {
         binding.proceed.setOnClickListener {
             //todo: create/edit a group here
             if (groupUID == null) {
-                val ref =
-                    (requireActivity() as MainActivity).rtDatabase.getReference("/groups").push()
                 var embedUUID: String? = null
+                if (imageURI != Uri.EMPTY) {
+                    embedUUID = UUID.randomUUID().toString()
+                }
+                val group = Group(
+                    binding.groupNameField.text.toString(),
+                    binding.groupDescField.text.toString(),
+                    embedUUID,
+                    null,
+                    System.currentTimeMillis()
+                )
+                (context as MainActivity).requests.createGroup(group, contacts) {
+                    if (imageURI != Uri.EMPTY) {
+                        (context as MainActivity).requests.setGroupMediaBitmap(
+                            embedUUID,
+                            it,
+                            imageURI
+                        )
+                    }
+                }
+
+                /*val ref =
+                    (requireActivity() as MainActivity).rtDatabase.getReference("/groups").push()
                 val outputStream = ByteArrayOutputStream()
                 if (imageURI != Uri.EMPTY) {
                     embedUUID = UUID.randomUUID().toString()
@@ -109,13 +140,6 @@ class EditGroupFragment : Fragment() {
                             outputStream.toByteArray()
                         )
                 }
-                val group = Group(
-                    binding.groupNameField.text.toString(),
-                    binding.groupDescField.text.toString(),
-                    embedUUID,
-                    null,
-                    System.currentTimeMillis()
-                )
                 ref.child("static").setValue(group)
                 ref.child("live").push().setValue(GroupEdit.CREATED.ordinal)
                 contacts.forEach {
@@ -131,9 +155,6 @@ class EditGroupFragment : Fragment() {
                     userGroupsRef.child("live/${groupStaticRef.key}")
                         .setValue(DatabaseOp.ADD.ordinal)
                 }
-                val bundle = Bundle()
-                bundle.putString("group_name", binding.groupNameField.text.toString())
-                bundle.putString("group_desc", binding.groupDescField.text.toString())
                 val msgRef =
                     (requireActivity() as MainActivity).rtDatabase.getReference("/group_messages/${ref.key}/static")
                         .push()
@@ -145,8 +166,7 @@ class EditGroupFragment : Fragment() {
                     )
                 )
                 (requireActivity() as MainActivity).rtDatabase.getReference("/group_messages/${ref.key}/live/${msgRef.key}")
-                    .setValue(DatabaseOp.ADD)
-
+                    .setValue(DatabaseOp.ADD)*/
             } else {
                 val ref =
                     (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
@@ -155,11 +175,11 @@ class EditGroupFragment : Fragment() {
                     val group = it.result.getValue(Group::class.java)!!
                     if (group.name != binding.groupNameField.text.toString()) {
                         ref.child("name").setValue(binding.groupNameField.text.toString())
-                        ref.child("live").push().setValue(GroupEdit.NAME.ordinal)
+                        ref.child("live").push().child("op").setValue(GroupEdit.NAME.ordinal)
                     }
                     if (group.description != binding.groupDescField.text.toString()) {
                         ref.child("description").setValue(binding.groupDescField.text.toString())
-                        ref.child("live").push().setValue(GroupEdit.DESCRIPTION.ordinal)
+                        ref.child("live").push().child("op").setValue(GroupEdit.DESCRIPTION.ordinal)
                     }
                     if (imageWasChanged) {
                         val embedUUID = UUID.randomUUID().toString()
@@ -174,7 +194,7 @@ class EditGroupFragment : Fragment() {
                                 outputStream.toByteArray()
                             )
                         ref.child("profile").setValue(embedUUID)
-                        ref.child("live").push().setValue(GroupEdit.PROFILE.ordinal)
+                        ref.child("live").push().child("op").setValue(GroupEdit.PROFILE.ordinal)
                     }
                 }
 

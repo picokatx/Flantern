@@ -44,7 +44,18 @@ class AddContactFragment : Fragment() {
                 Toast.makeText(context, "Search using at least 4 characters!", Toast.LENGTH_LONG)
                     .show()
             } else {
-                val lower = binding.contactNameField.text.toString()
+                (context as MainActivity).requests.getUsersByName(
+                    binding.contactNameField.text.toString(),
+                    {
+                        adapter.notifyDataSetChanged()
+                    },
+                    { key, user ->
+                        usersUID.add(
+                            Pair(Pair("", key), user)
+                        )
+                    }
+                )
+                /*val lower = binding.contactNameField.text.toString()
                 val upper = binding.contactNameField.text.toString()
                     .substring(
                         0,
@@ -67,7 +78,7 @@ class AddContactFragment : Fragment() {
                             )
                         }
                         adapter.notifyDataSetChanged()
-                    }
+                    }*/
             }
         }
 
@@ -81,13 +92,39 @@ class AddContactFragment : Fragment() {
                 val ref =
                     (requireActivity() as MainActivity).rtDatabase.getReference("/user_contacts/$uid/has")
                 val key = ref.child("static").push().key
-                ref.child("static").get().addOnCompleteListener {
+                ref.child("static").equalTo(adapter.selected[0]).get().addOnCompleteListener {
+                    if (it.result.exists()) {
+                        Toast.makeText(
+                            context,
+                            "You've already added this contact!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        ref.child("static/$key").setValue(adapter.selected[0])
+                        ref.child("live/${key}").setValue(DatabaseOp.ADD)
+                        if (adapter.selected[0] != uid) {
+                            val otherRef =
+                                (requireActivity() as MainActivity).rtDatabase.getReference("/user_contacts/${adapter.selected[0]}/has")
+                            val otherKey = otherRef.child("static").push().key
+                            otherRef.child("static/$otherKey").setValue(uid)
+                            otherRef.child("live/$otherKey").setValue(DatabaseOp.ADD)
+                        }
+                        val bundle = Bundle()
+                        bundle.putString("contact_uid", adapter.selected[0])
+                        navigateWithBundle(binding.root, R.id.action_global_HomeFragment, bundle)
+                    }
+                }
+                /*ef.child("static").get().addOnCompleteListener {
                     if (it.result.hasChild(adapter.selected[0])) {
-                        Toast.makeText(context, "You've already added this contact!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            context,
+                            "You've already added this contact!",
+                            Toast.LENGTH_LONG
+                        ).show()
                     } else {
                         ref.child("static/${adapter.selected[0]}").setValue(key)
                         ref.child("live/${key}").setValue(adapter.selected[0])
-                        if (adapter.selected[0]!=uid) {
+                        if (adapter.selected[0] != uid) {
                             val otherRef =
                                 (requireActivity() as MainActivity).rtDatabase.getReference("/user_contacts/${adapter.selected[0]}/has")
                             val otherKey = otherRef.child("static").push().key
@@ -98,7 +135,7 @@ class AddContactFragment : Fragment() {
                         bundle.putString("contact_uid", adapter.selected[0])
                         navigateWithBundle(binding.root, R.id.action_global_HomeFragment, bundle)
                     }
-                }
+                }*/
             }
         }
         return binding.root

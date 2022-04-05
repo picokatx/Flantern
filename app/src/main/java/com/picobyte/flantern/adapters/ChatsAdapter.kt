@@ -8,28 +8,23 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.R
 import com.picobyte.flantern.databinding.CardChatsBinding
-import com.picobyte.flantern.types.Group
-import com.google.firebase.database.DataSnapshot
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.GenericTypeIndicator
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.db.GroupsViewModel
-import com.picobyte.flantern.types.Message
-import com.picobyte.flantern.types.getDate
+import com.picobyte.flantern.types.*
 import com.picobyte.flantern.utils.navigateTo
 import com.picobyte.flantern.utils.navigateWithBundle
 
-class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String,String>, Group>>) :
+class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String, String>, Group>>) :
     RecyclerView.Adapter<ChatsAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v: View = LayoutInflater.from(parent.context)
@@ -56,10 +51,34 @@ class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String,String>, Group>>) 
                 navigateWithBundle(binding.root, R.id.action_global_ChatFragment, bundle)
             }
             binding.chatName.text = chp.name
-            if (chp.recent!=null) {
-                binding.chatRecent.text = "${chp.recent?.user}: ${chp.recent?.content}"
-                binding.chatRecentDate.text = getDate(chp.recent!!.timestamp!!, "hh:mm:ss")
-            }
+            (itemView.context as MainActivity).rtDatabase.getReference("group_messages/$groupUID/live")
+                .orderByKey().limitToLast(1).addChildEventListener(object : ChildEventListener {
+                    override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                        if (snapshot.child("op").getValue(Int::class.java)==DatabaseOp.ADD.ordinal) {
+                            (itemView.context as MainActivity).requests.getMessage(groupUID, snapshot.key!!, {
+                                binding.chatRecent.text = "${it.user}: ${it.content}"
+                                binding.chatRecentDate.text = getDate(it.timestamp!!, "hh:mm:ss")
+                                (itemView.context as MainActivity).requests.setRecent(groupUID, it)
+                            })
+                        }
+                    }
+
+                    override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                        return
+                    }
+
+                    override fun onChildRemoved(snapshot: DataSnapshot) {
+                        return
+                    }
+
+                    override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                        return
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        return
+                    }
+                })
         }
     }
 }

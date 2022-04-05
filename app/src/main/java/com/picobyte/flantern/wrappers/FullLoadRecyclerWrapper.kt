@@ -37,7 +37,7 @@ class FullLoadRecyclerWrapper<T>(
     lateinit var lastKey: String
     lateinit var firstKey: String
     lateinit var liveKey: String
-    val live: ArrayList<Pair<Pair<String, String>, T>> = ArrayList<Pair<Pair<String,String>, T>>()
+    val live: ArrayList<Pair<Pair<String, String>, T>> = ArrayList<Pair<Pair<String, String>, T>>()
     var isLiveLoaded: Boolean = false
     fun initializePager() {
         keyRef.child("static").orderByKey().limitToLast(pageLength).get().addOnCompleteListener {
@@ -67,7 +67,8 @@ class FullLoadRecyclerWrapper<T>(
                     it.result.children.forEach { entry ->
                         val key = entry.getValue(String::class.java)!!
                         dataRef.child("${key}/static").get().addOnCompleteListener { user ->
-                            val userKeyPair = Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
+                            val userKeyPair =
+                                Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
                             repo.add(userKeyPair)
                             adapter.notifyItemInserted(repo.size)
                         }
@@ -89,7 +90,8 @@ class FullLoadRecyclerWrapper<T>(
                     it.result.children.reversed().forEach { entry ->
                         val key = entry.getValue(String::class.java)!!
                         dataRef.child("${key}/static").get().addOnCompleteListener { user ->
-                            val userKeyPair = Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
+                            val userKeyPair =
+                                Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
                             repo.add(0, userKeyPair)
                             adapter.notifyItemInserted(0)
                         }
@@ -106,13 +108,17 @@ class FullLoadRecyclerWrapper<T>(
     fun addEntry(key: String) {
         val entryKey = keyRef.push().key!!
         keyRef.child("static/$entryKey").setValue(key)
-        keyRef.child("live/$entryKey").setValue(DatabaseOp.ADD)
+        keyRef.child("live/$entryKey/op").setValue(DatabaseOp.ADD)
     }
 
     fun removeEntry(key: String) {
-        val entryKey = keyRef.push().key!!
-        keyRef.child("static/$entryKey").removeValue()
-        keyRef.child("live/$entryKey").setValue(DatabaseOp.DELETE)
+        keyRef.child("static/$key").get().addOnCompleteListener {
+            if (it.result.exists()) {
+                keyRef.child("static/$key").removeValue()
+                keyRef.child("live/$key/op").setValue(DatabaseOp.DELETE)
+                keyRef.child("live/$key/data").setValue(it.result.getValue(String::class.java))
+            }
+        }
     }
 
     fun addItemListener() {
@@ -127,7 +133,10 @@ class FullLoadRecyclerWrapper<T>(
                                     dataRef.child("${key}/static").get()
                                         .addOnCompleteListener { data ->
                                             val userKeyPair =
-                                                Pair(Pair(snapshot.key!!, key), data.result.getValue(type)!!)
+                                                Pair(
+                                                    Pair(snapshot.key!!, key),
+                                                    data.result.getValue(type)!!
+                                                )
                                             live.add(userKeyPair)
                                             live.removeAt(0)
                                             liveKey = live[0].first.first

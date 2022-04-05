@@ -3,7 +3,6 @@ package com.picobyte.flantern
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -22,16 +21,13 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.picobyte.flantern.api.FlanternNotifications
 import com.picobyte.flantern.authentication.AuthFirebase
 import com.picobyte.flantern.authentication.AuthGoogle
 import com.picobyte.flantern.databinding.ActivityMainBinding
 import com.picobyte.flantern.db.GroupsViewModel
-import com.picobyte.flantern.ext.Launchers
-import com.picobyte.flantern.requests.FlanternRequests
-import com.picobyte.flantern.types.Message
+import com.picobyte.flantern.api.FlanternRequests
 import com.picobyte.flantern.types.User
-import kotlinx.coroutines.CoroutineScope
-import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -45,8 +41,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var animals: List<String>
     lateinit var requests: FlanternRequests
     val gson = Gson()
-    val REQUEST_ID_MULTIPLE_PERMISSIONS = 101
-    val REQUEST_CAMERA_CODE = 200
     val REQUEST_GALLERY_CODE = 300
     val userMap: HashMap<String, User> = HashMap<String, User>()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,11 +54,14 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_GALLERY_CODE
             )
         }
+        val testnotif = FlanternNotifications(this)
+        testnotif.init()
+        testnotif.test(R.drawable.document)
         authGoogle = AuthGoogle(this, Firebase.auth)
         authFirebase = AuthFirebase(this, Firebase.auth)
         rtDatabase = Firebase.database(getString(R.string.realtime_db_id))
         storage = Firebase.storage
-        requests = FlanternRequests(this, rtDatabase, storage, authGoogle)
+        requests = FlanternRequests(this, rtDatabase, storage, Firebase.auth)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         val navController = findNavController(R.id.nav_host_fragment_content_main)

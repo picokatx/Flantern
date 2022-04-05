@@ -22,7 +22,7 @@ import com.picobyte.flantern.wrappers.PagedRecyclerWrapper
 import com.picobyte.flantern.wrappers.UserContactRecyclerWrapper
 
 class ItemSelectFragment : Fragment() {
-    lateinit var pagedRecycler: UserContactRecyclerWrapper<User>
+    lateinit var pagedRecycler: FullLoadRecyclerWrapper<User>
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -45,7 +45,7 @@ class ItemSelectFragment : Fragment() {
                     (requireActivity() as MainActivity).rtDatabase.getReference("/user_contacts/$userUID/has")
                 val userRef =
                     (requireActivity() as MainActivity).rtDatabase.getReference("/user")
-                pagedRecycler = UserContactRecyclerWrapper<User>(
+                pagedRecycler = FullLoadRecyclerWrapper<User>(
                     adapter as RecyclerView.Adapter<RecyclerView.ViewHolder>,
                     binding.itemRecycler,
                     ref,

@@ -23,7 +23,17 @@ class SignInFragment : Fragment() {
             (binding.root.context as MainActivity).authGoogle.signIn {
                 Toast.makeText(binding.root.context, "Signed in with Google", Toast.LENGTH_SHORT)
                     .show()
-                (context as MainActivity).rtDatabase.getReference("user").get()
+                (context as MainActivity).requests.getUser((context as MainActivity).authGoogle.getUID(),
+                    {
+                        navigateTo(binding.root, R.id.action_global_HomeFragment)
+                    },
+                    {
+                        (context as MainActivity).requests.createNewUser {
+                            navigateTo(binding.root, R.id.action_global_HomeFragment)
+                        }
+                    }
+                )
+                /*(context as MainActivity).rtDatabase.getReference("user").get()
                     .addOnCompleteListener {
                         if (it.result.hasChild((context as MainActivity).authGoogle.getUID())) {
                             navigateTo(binding.root, R.id.action_global_HomeFragment)
@@ -39,7 +49,7 @@ class SignInFragment : Fragment() {
                                 .push().setValue(0)
                             navigateTo(binding.root, R.id.action_global_HomeFragment)
                         }
-                    }
+                    }*/
             }
         }
         binding.firebaseSignInButton.setOnClickListener {

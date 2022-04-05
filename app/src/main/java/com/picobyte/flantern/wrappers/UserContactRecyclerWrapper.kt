@@ -90,13 +90,17 @@ class UserContactRecyclerWrapper<T>(
     fun addEntry(key: String) {
         val entryKey = keyRef.push().key!!
         keyRef.child("static/$entryKey").setValue(key)
-        keyRef.child("live/$entryKey").setValue(DatabaseOp.ADD)
+        keyRef.child("live/$entryKey/op").setValue(DatabaseOp.ADD)
     }
 
     fun removeEntry(key: String) {
-        val entryKey = keyRef.push().key!!
-        keyRef.child("static/$entryKey").removeValue()
-        keyRef.child("live/$entryKey").setValue(DatabaseOp.DELETE)
+        keyRef.child("static/$key").get().addOnCompleteListener {
+            if (it.result.exists()) {
+                keyRef.child("static/$key").removeValue()
+                keyRef.child("live/$key/op").setValue(DatabaseOp.DELETE)
+                keyRef.child("live/$key/data").setValue(it.result.getValue(String::class.java))
+            }
+        }
     }
 
     fun addItemListener() {

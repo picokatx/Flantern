@@ -1,21 +1,27 @@
 package com.picobyte.flantern.adapters
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaDataSource
+import android.media.MediaPlayer
+import android.os.Environment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.content.res.AppCompatResources
+import android.widget.MediaController
 import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.R
 import com.picobyte.flantern.databinding.CardMessageBinding
 import com.picobyte.flantern.types.*
-import com.squareup.picasso.Picasso
-import java.io.InputStream
-import androidx.constraintlayout.widget.ConstraintSet
 import com.picobyte.flantern.utils.ONE_MEGABYTE
+import android.content.Context.DOWNLOAD_SERVICE
+
+import androidx.core.content.ContextCompat.getSystemService
+
+import android.app.DownloadManager
+import androidx.core.content.ContextCompat
+
 
 class ChatAdapter(
     private val groupUID: String,
@@ -42,15 +48,16 @@ class ChatAdapter(
             val userMap = (itemView.context as MainActivity).userMap
             if (!userMap.containsKey(chp.user)) {
                 binding.nameField.text = "..."
-                (itemView.context as MainActivity).rtDatabase.getReference("/user/${chp.user}/static")
-                    .get().addOnCompleteListener {
-                        userMap[chp.user!!] = it.result.getValue(User::class.java)!!
-                        binding.nameField.text = userMap[chp.user]!!.name
-                    }
+                (itemView.context as MainActivity).requests.getUser(chp.user!!, {
+                    userMap[chp.user] = it
+                    binding.nameField.text = userMap[chp.user]!!.name
+                })
             } else {
                 binding.nameField.text = userMap[chp.user]!!.name
             }
             binding.testImage.visibility = View.GONE
+            binding.testVideo.visibility = View.GONE
+            binding.testDocument.visibility = View.GONE
             binding.embedField.setOnClickListener {
                 if (chp.embed != null) {
                     when (chp.embed.type) {
@@ -60,17 +67,57 @@ class ChatAdapter(
                                     Log.e("Flantern", "hello please set the image now")
                                     (itemView.context as MainActivity).runOnUiThread {
                                         binding.testImage.setImageBitmap(
-                                            BitmapFactory.decodeByteArray(it.result, 0, it.result.size)
+                                            BitmapFactory.decodeByteArray(
+                                                it.result,
+                                                0,
+                                                it.result.size
+                                            )
                                         )
                                     }
                                 }
                             binding.testImage.visibility = View.VISIBLE
                         }
                         EmbedType.VIDEO.ordinal -> {
+                            (itemView.context as MainActivity).requests.getGroupMediaDocumentUri(
+                                chp.embed,
+                                groupUID
+                            ) {
+                                binding.testVideo.setVideoURI(it)
+                                binding.testVideo.visibility = View.VISIBLE
+                                binding.testVideo.requestFocus();
+                                binding.testVideo.start();
+                            }
                         }
                         EmbedType.AUDIO.ordinal -> {
+                            (itemView.context as MainActivity).requests.getGroupMediaDocumentUri(
+                                chp.embed,
+                                groupUID
+                            ) {
+                                binding.testVideo.setVideoURI(it)
+                                binding.testVideo.visibility = View.VISIBLE
+                                binding.testVideo.requestFocus();
+                                binding.testVideo.start();
+                            }
                         }
                         EmbedType.DOCUMENT.ordinal -> {
+                            binding.testDocument.visibility = View.VISIBLE
+                            binding.testDocument.setOnClickListener {
+                                (itemView.context as MainActivity).requests.getGroupMediaDocumentUri(
+                                    chp.embed,
+                                    groupUID
+                                ) {
+                                    val request = DownloadManager.Request(it)
+                                    request.setDestinationInExternalPublicDir(
+                                        Environment.DIRECTORY_DOWNLOADS,
+                                        "fileName"
+                                    )
+                                    //https://stackoverflow.com/questions/28183893/how-to-store-files-generated-from-app-in-downloads-folder-of-android
+                                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                    val manager =
+                                        itemView.context.getSystemService(DOWNLOAD_SERVICE) as DownloadManager?
+                                    manager!!.enqueue(request)
+                                }
+                            }
                         }
                     }
                 }

@@ -36,7 +36,7 @@ class HomeFragment : Fragment() {
         val binding = FragmentHomeBinding.inflate(inflater, container, false)
         val viewPager = binding.homeViewPager
         val tabLayout = binding.homeTabLayout
-        val authUID = (context as MainActivity).authGoogle.getUID()
+        //val authUID = (context as MainActivity).authGoogle.getUID()
         binding.toolbar.inflateMenu(R.menu.menu_main)
         binding.toolbar.setOnMenuItemClickListener {
             when (it.itemId) {
@@ -62,7 +62,14 @@ class HomeFragment : Fragment() {
                     val alertDialogView =
                         DialogInviteCodeBinding.inflate(inflater, container, false)
                     alertDialogView.join.setOnClickListener {
-                        (requireActivity() as MainActivity).rtDatabase.getReference("/group_invites")
+                        (context as MainActivity).requests.joinGroupWithCode(
+                            alertDialogView.inviteCodeField.text.toString(),
+                            {},
+                            {
+                                Toast.makeText(context, "This invite code is invalid!", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                        /*(requireActivity() as MainActivity).rtDatabase.getReference("/group_invites")
                             .child(
                                 alertDialogView.inviteCodeField.text.toString()
                             ).get().addOnCompleteListener { code ->
@@ -82,7 +89,7 @@ class HomeFragment : Fragment() {
                                 } else {
                                     Toast.makeText(context, "This invite code is invalid!", Toast.LENGTH_LONG).show()
                                 }
-                            }
+                            }*/
                     }
                     builder.setMessage("Enter Invite Code")
                         .setView(alertDialogView.root)

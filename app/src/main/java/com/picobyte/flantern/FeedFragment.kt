@@ -14,6 +14,8 @@ class FeedFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val binding: FragmentFeedBinding = FragmentFeedBinding.inflate(inflater,container,false)
+        val userUID = (context as MainActivity).authGoogle.getUID()
+
         return binding.root
     }
 }

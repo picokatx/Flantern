@@ -3,7 +3,7 @@ package com.picobyte.flantern.wrappers
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.*
-import com.picobyte.flantern.types.MessageEdit
+import com.picobyte.flantern.types.DatabaseOp
 import kotlin.collections.ArrayList
 
 class PagedRecyclerWrapper<T>(
@@ -21,7 +21,7 @@ class PagedRecyclerWrapper<T>(
     var isLiveLoaded: Boolean = false
     fun initializePager() {
         ref.child("static").orderByKey().limitToLast(pageLength).get().addOnCompleteListener {
-            if (it.result.children.count()!=0) {
+            if (it.result.children.count() != 0) {
                 lastKey = it.result.children.first().key!!
                 firstKey = it.result.children.last().key!!
                 liveKey = it.result.children.first().key!!
@@ -38,7 +38,7 @@ class PagedRecyclerWrapper<T>(
     fun pageDown() {
         ref.child("static").orderByKey().startAfter(firstKey).limitToFirst(pageLength).get()
             .addOnCompleteListener {
-                if (it.result.children.count()!=0) {
+                if (it.result.children.count() != 0) {
                     firstKey = it.result.children.last().key!!
                     it.result.children.forEach { msg ->
                         Log.e("Flantern", msg.key!!)
@@ -58,7 +58,7 @@ class PagedRecyclerWrapper<T>(
     fun pageUp() {
         ref.child("static").orderByKey().endBefore(lastKey).limitToLast(pageLength).get()
             .addOnCompleteListener {
-                if (it.result.children.count()!=0) {
+                if (it.result.children.count() != 0) {
                     lastKey = it.result.children.first().key!!
                     it.result.children.reversed().forEach { msg ->
                         val msgKeyPair = Pair(msg.key!!, msg.getValue(type)!!)
@@ -77,17 +77,22 @@ class PagedRecyclerWrapper<T>(
     fun addItem(item: T) {
         val key = ref.child("static").push().key!!
         ref.child("static").child(key).setValue(item)
-        ref.child("live").child(key).setValue(MessageEdit.ADD.ordinal)
+        ref.child("live/$key/op").setValue(DatabaseOp.ADD.ordinal)
     }
 
     fun removeItem(key: String) {
-        ref.child("static").child(key).removeValue()
-        ref.child("live").child(key).setValue(MessageEdit.DELETE.ordinal)
+        ref.child("static/$key").get().addOnCompleteListener {
+            if (it.result.exists()) {
+                ref.child("static").child(key).removeValue()
+                ref.child("live/$key/op").setValue(DatabaseOp.DELETE.ordinal)
+                ref.child("live/$key/data").setValue(it.result.getValue(String::class.java))
+            }
+        }
     }
 
     fun modifyItem(key: String, item: T) {
         ref.child("static").child(key).setValue(item)
-        ref.child("live").child(key).setValue(MessageEdit.MODIFY.ordinal)
+        ref.child("live/$key/op").setValue(DatabaseOp.MODIFY.ordinal)
     }
 
     fun addItemListener() {
@@ -96,7 +101,7 @@ class PagedRecyclerWrapper<T>(
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (isLiveLoaded) {
                         when (snapshot.getValue(Int::class.java)) {
-                            MessageEdit.ADD.ordinal -> {
+                            DatabaseOp.ADD.ordinal -> {
                                 ref.child("static/${snapshot.key}").get().addOnCompleteListener {
                                     val temp = Pair(it.result.key!!, it.result.getValue(type)!!)
                                     live.add(temp)
@@ -119,7 +124,7 @@ class PagedRecyclerWrapper<T>(
                                     }
                                 }
                             }
-                            MessageEdit.DELETE.ordinal -> {
+                            DatabaseOp.DELETE.ordinal -> {
                                 //todo: fix this in accordance to live/repo implementation
                                 for (i in 0..repo.size) {
                                     if (repo[i].first == snapshot.key) {
@@ -129,7 +134,7 @@ class PagedRecyclerWrapper<T>(
                                     }
                                 }
                             }
-                            MessageEdit.MODIFY.ordinal -> {
+                            DatabaseOp.MODIFY.ordinal -> {
                                 //todo: fix this in accordance to live/repo implementation
                                 for (i in 0..repo.size) {
                                     if (repo[i].first == snapshot.key) {
@@ -150,6 +155,7 @@ class PagedRecyclerWrapper<T>(
                         isLiveLoaded = true
                     }
                 }
+
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
                     return
                 }
