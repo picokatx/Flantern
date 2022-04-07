@@ -108,7 +108,7 @@ class UserContactRecyclerWrapper<T>(
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (isLiveLoaded) {
-                        when (snapshot.getValue(Int::class.java)) {
+                        when (snapshot.child("op").getValue(Int::class.java)) {
                             DatabaseOp.ADD.ordinal -> {
                                 keyRef.child("static/${snapshot.key}").get().addOnCompleteListener {
                                     val key = it.result.getValue(String::class.java)!!

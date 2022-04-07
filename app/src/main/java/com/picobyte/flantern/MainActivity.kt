@@ -54,9 +54,6 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_GALLERY_CODE
             )
         }
-        val testnotif = FlanternNotifications(this)
-        testnotif.init()
-        testnotif.test(R.drawable.document)
         authGoogle = AuthGoogle(this, Firebase.auth)
         authFirebase = AuthFirebase(this, Firebase.auth)
         rtDatabase = Firebase.database(getString(R.string.realtime_db_id))

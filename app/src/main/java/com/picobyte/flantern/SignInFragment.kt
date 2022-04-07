@@ -53,7 +53,7 @@ class SignInFragment : Fragment() {
             }
         }
         binding.firebaseSignInButton.setOnClickListener {
-            (binding.root.context as MainActivity).authFirebase.signIn(
+            (binding.root.context as MainActivity).authGoogle.signInWithFirebase(
                 binding.emailField.text.toString(),
                 binding.passwordField.text.toString()
             ) { task ->
@@ -74,6 +74,7 @@ class SignInFragment : Fragment() {
                     }
                 }
             }
+
         }
         return binding.root
     }

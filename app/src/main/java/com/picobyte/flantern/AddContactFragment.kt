@@ -101,13 +101,13 @@ class AddContactFragment : Fragment() {
                         ).show()
                     } else {
                         ref.child("static/$key").setValue(adapter.selected[0])
-                        ref.child("live/${key}").setValue(DatabaseOp.ADD)
+                        ref.child("live/${key}/op").setValue(DatabaseOp.ADD)
                         if (adapter.selected[0] != uid) {
                             val otherRef =
                                 (requireActivity() as MainActivity).rtDatabase.getReference("/user_contacts/${adapter.selected[0]}/has")
                             val otherKey = otherRef.child("static").push().key
                             otherRef.child("static/$otherKey").setValue(uid)
-                            otherRef.child("live/$otherKey").setValue(DatabaseOp.ADD)
+                            otherRef.child("live/$otherKey/op").setValue(DatabaseOp.ADD)
                         }
                         val bundle = Bundle()
                         bundle.putString("contact_uid", adapter.selected[0])

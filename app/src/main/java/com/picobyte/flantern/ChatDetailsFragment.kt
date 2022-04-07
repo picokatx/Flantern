@@ -1,5 +1,8 @@
 package com.picobyte.flantern
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,10 +10,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.picobyte.flantern.adapters.ChatAdapter
 import com.picobyte.flantern.adapters.UserAdapter
+import com.picobyte.flantern.databinding.CardMessageBinding
 import com.picobyte.flantern.databinding.FragmentChatDetailsBinding
 import com.picobyte.flantern.types.*
 import com.picobyte.flantern.utils.navigateWithBundle
@@ -93,8 +99,17 @@ class ChatDetailsFragment : Fragment() {
                 navigateWithBundle(binding.root, R.id.action_global_ItemSelectFragment, bundle)
             }
             binding.membersBarInvite.setOnClickListener {
-                (context as MainActivity).requests.createGroupInvite(groupUID)
+                (context as MainActivity).requests.createGroupInvite(groupUID) { code ->
+                    Toast.makeText(context, "Your Invite Code is $code", Toast.LENGTH_LONG).show()
+                    val clipboard = (context as MainActivity).getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Invite Code", code))
+
+                }
             }
+            (context as MainActivity).requests.getRecent(groupUID, { msgUID, message ->
+                val vHolder = ChatAdapter.ViewHolder(binding.pinnedMessage.root)
+                vHolder.bindItems(groupUID, msgUID, message)
+            })
             binding.actionBarExit.setOnClickListener {
                 val builder = AlertDialog.Builder(context!!)
                 builder.setMessage("Are you sure you want to exit the group")
@@ -111,6 +126,24 @@ class ChatDetailsFragment : Fragment() {
                                     Toast.LENGTH_LONG
                                 ).show()
                             }
+                        })
+                builder.create().show()
+            }
+            binding.actionBarDelete.setOnClickListener {
+                val builder = AlertDialog.Builder(context!!)
+                builder.setMessage("Are you sure you want to delete the group")
+                    .setPositiveButton("Yes",
+                        DialogInterface.OnClickListener { dialog, id ->
+                            (context as MainActivity).requests.deleteGroup(groupUID) {
+                                Toast.makeText(
+                                    context,
+                                    "You deleted $groupName",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        })
+                    .setNegativeButton("Leave",
+                        DialogInterface.OnClickListener { dialog, id ->
                         })
                 builder.create().show()
             }

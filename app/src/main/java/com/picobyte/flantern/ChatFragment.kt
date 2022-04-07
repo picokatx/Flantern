@@ -2,9 +2,6 @@ package com.picobyte.flantern
 
 import android.Manifest
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,7 +16,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.MediaStore
-import android.view.ViewAnimationUtils
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.animation.doOnEnd
@@ -38,6 +34,8 @@ import com.picobyte.flantern.utils.navigateTo
 import com.picobyte.flantern.utils.navigateWithBundle
 import rx.android.schedulers.AndroidSchedulers
 import java.io.*
+import android.view.*
+import android.view.Menu
 
 
 class ChatFragment : Fragment() {
@@ -300,5 +298,4 @@ class ChatFragment : Fragment() {
         recyclerView.adapter = adapter
         return binding.root
     }
-
 }

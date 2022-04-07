@@ -51,14 +51,22 @@ class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String, String>, Group>>)
                 navigateWithBundle(binding.root, R.id.action_global_ChatFragment, bundle)
             }
             binding.chatName.text = chp.name
+            (itemView.context as MainActivity).requests.getRecent(groupUID, {
+                (itemView.context as MainActivity).requests.getUser(it.user!!, { user ->
+                    binding.chatRecent.text = "${user.name}: ${it.content}"
+                    binding.chatRecentDate.text = getDate(it.timestamp!!, "hh:mm:ss")
+                })
+            })
             (itemView.context as MainActivity).rtDatabase.getReference("group_messages/$groupUID/live")
                 .orderByKey().limitToLast(1).addChildEventListener(object : ChildEventListener {
                     override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                         if (snapshot.child("op").getValue(Int::class.java)==DatabaseOp.ADD.ordinal) {
                             (itemView.context as MainActivity).requests.getMessage(groupUID, snapshot.key!!, {
-                                binding.chatRecent.text = "${it.user}: ${it.content}"
-                                binding.chatRecentDate.text = getDate(it.timestamp!!, "hh:mm:ss")
-                                (itemView.context as MainActivity).requests.setRecent(groupUID, it)
+                                (itemView.context as MainActivity).requests.getUser(it.user!!, { user ->
+                                    binding.chatRecent.text = "${user.name}: ${it.content}"
+                                    binding.chatRecentDate.text = getDate(it.timestamp!!, "hh:mm:ss")
+                                    (itemView.context as MainActivity).requests.setRecent(groupUID, it)
+                                })
                             })
                         }
                     }

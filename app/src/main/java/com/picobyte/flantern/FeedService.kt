@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ChildEventListener
@@ -18,6 +19,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import com.picobyte.flantern.api.FlanternRequests
 import com.picobyte.flantern.types.*
+
 const val CHANNEL_ID = "com.picobyte.flantern"
 const val ADD_GROUP_ID = "com.picobyte.flantern.group.add"
 const val ADD_USER_ID = "com.picobyte.flantern.user.add"
@@ -62,12 +64,24 @@ class FeedService : Service() {
     val groupNotifs = ArrayList<Notification>()
     val userNotifs = ArrayList<Notification>()
     val groupMessageNotifs = ArrayList<Notification>()
+    val groupNotifIds = ArrayList<Int>()
+    val userNotifIds = ArrayList<Int>()
+    val groupMessageNotifIds = ArrayList<Int>()
 
     override fun onBind(p0: Intent?): IBinder? {
         auth = Firebase.auth
         database = Firebase.database(getString(R.string.realtime_db_id))
         storage = Firebase.storage
         requests = FlanternRequests(this, database, storage, auth)
+        groupNotifIds.add(7)
+        groupNotifIds.add(19)
+        groupNotifIds.add(42)
+        userNotifIds.add(7)
+        userNotifIds.add(19)
+        userNotifIds.add(42)
+        groupMessageNotifIds.add(7)
+        groupMessageNotifIds.add(19)
+        groupMessageNotifIds.add(42)
         return null
     }
 
@@ -84,6 +98,10 @@ class FeedService : Service() {
                             userContactsRef.child("static/${snapshot.key}").get()
                                 .addOnCompleteListener {
                                     val contactUID = it.result.getValue(String::class.java)!!
+                                    var username = "User"
+                                    database.getReference("users/$contactUID/static/name").get().addOnCompleteListener { name ->
+                                        username = name.result.getValue(String::class.java)!!
+                                    }
                                     //notify added contact
                                     userListeners[contactUID] =
                                         database.getReference("users/$contactUID/live").orderByKey()
@@ -96,23 +114,78 @@ class FeedService : Service() {
                                                     val key = snapshot.key!!
                                                     //notify contact details changed
                                                     when (snapshot.getValue(Int::class.java)) {
-                                                        UserEdit.CREATED.ordinal -> {
-                                                            userNotif
-                                                        }
                                                         UserEdit.NAME.ordinal -> {
-
+                                                            database.getReference("user/$contactUID/static/name")
+                                                                .get()
+                                                                .addOnCompleteListener { data ->
+                                                                    val name =
+                                                                        data.result.getValue(String::class.java)!!
+                                                                    userNotifs.add(
+                                                                        userNotif.setContentText(
+                                                                            "$username -> $name"
+                                                                        ).build()
+                                                                    )
+                                                                    if (userNotifs.size>3) {
+                                                                        userNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0..userNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(userNotifIds[i], userNotifs[i])
+                                                                    }
+                                                                    username = name
+                                                                }
                                                         }
                                                         UserEdit.DESCRIPTION.ordinal -> {
-
+                                                            database.getReference("user/$contactUID/static/description")
+                                                                .get()
+                                                                .addOnCompleteListener { data ->
+                                                                    val description =
+                                                                        data.result.getValue(String::class.java)
+                                                                    userNotifs.add(
+                                                                        userNotif.setContentText(
+                                                                            description
+                                                                        ).build()
+                                                                    )
+                                                                    if (userNotifs.size>3) {
+                                                                        userNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0..userNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(userNotifIds[i], userNotifs[i])
+                                                                    }
+                                                                }
                                                         }
                                                         UserEdit.PROFILE.ordinal -> {
-
-                                                        }
-                                                        UserEdit.STATUS.ordinal -> {
-
+                                                            userNotifs.add(
+                                                                userNotif.setContentText(
+                                                                    "$username updated their profile"
+                                                                ).build()
+                                                            )
+                                                            if (userNotifs.size>3) {
+                                                                userNotifs.removeAt(0)
+                                                            }
+                                                            for (i in 0..userNotifs.size) {
+                                                                NotificationManagerCompat.from(
+                                                                    this@FeedService
+                                                                ).notify(userNotifIds[i], userNotifs[i])
+                                                            }
                                                         }
                                                         UserEdit.DELETED.ordinal -> {
-//grou                                                      //data val remains in database. value irrelevant
+                                                            userNotifs.add(
+                                                                userNotif.setContentText(
+                                                                    "$username deleted their account"
+                                                                ).build()
+                                                            )
+                                                            if (userNotifs.size>3) {
+                                                                userNotifs.removeAt(0)
+                                                            }
+                                                            for (i in 0..userNotifs.size) {
+                                                                NotificationManagerCompat.from(
+                                                                    this@FeedService
+                                                                ).notify(userNotifIds[i], userNotifs[i])
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -179,6 +252,10 @@ class FeedService : Service() {
                             userGroupsRef.child("static/${snapshot.key}").get()
                                 .addOnCompleteListener {
                                     val groupUID = it.result.getValue(String::class.java)!!
+                                    var groupName = "Group"
+                                    database.getReference("groups/$groupUID/static/name").get().addOnCompleteListener { name ->
+                                        groupName = name.result.getValue(String::class.java)!!
+                                    }
                                     groupListeners[groupUID] =
                                         database.getReference("groups/$groupUID/live").orderByKey()
                                             .limitToLast(1)
@@ -189,21 +266,79 @@ class FeedService : Service() {
                                                 ) {
                                                     //notify group details changed
                                                     when (snapshot.getValue(Int::class.java)) {
-                                                        GroupEdit.CREATED.ordinal -> {
-
-                                                        }
                                                         GroupEdit.NAME.ordinal -> {
-
+                                                            database.getReference("user/$groupUID/static/name")
+                                                                .get()
+                                                                .addOnCompleteListener { data ->
+                                                                    val name =
+                                                                        data.result.getValue(String::class.java)
+                                                                    groupNotifs.add(
+                                                                        groupNotif.setContentText(
+                                                                            "$groupName -> name"
+                                                                        ).build()
+                                                                    )
+                                                                    if (groupNotifs.size>3) {
+                                                                        groupNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0..groupNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                    }
+                                                                }
                                                         }
                                                         GroupEdit.DESCRIPTION.ordinal -> {
-
+                                                            database.getReference("user/$groupUID/static/description")
+                                                                .get()
+                                                                .addOnCompleteListener { data ->
+                                                                    val description =
+                                                                        data.result.getValue(String::class.java)
+                                                                    groupNotifs.add(
+                                                                        groupNotif.setContentText(
+                                                                            description
+                                                                        ).build()
+                                                                    )
+                                                                    if (groupNotifs.size>3) {
+                                                                        groupNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0..groupNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                    }
+                                                                }
                                                         }
                                                         GroupEdit.PROFILE.ordinal -> {
+                                                            groupNotifs.add(
+                                                                groupNotif.setContentText(
+                                                                    "$groupName updated their profile"
+                                                                ).build()
+                                                            )
+                                                            if (groupNotifs.size>3) {
+                                                                groupNotifs.removeAt(0)
+                                                            }
+                                                            for (i in 0..groupNotifs.size) {
+                                                                NotificationManagerCompat.from(
+                                                                    this@FeedService
+                                                                ).notify(groupNotifIds[i], groupNotifs[i])
+                                                            }
 
                                                         }
                                                         GroupEdit.DELETED.ordinal -> {
-                                                            //group remains in database, data val irrelevant
-                                                        }
+                                                            groupNotifs.add(
+                                                                groupNotif.setContentText(
+
+                                                                    "group $groupName was deleted"
+                                                                ).build()
+                                                            )
+                                                            if (groupNotifs.size>3) {
+                                                                groupNotifs.removeAt(0)
+                                                            }
+                                                            for (i in 0..groupNotifs.size) {
+                                                                NotificationManagerCompat.from(
+                                                                    this@FeedService
+                                                                ).notify(groupNotifIds[i], groupNotifs[i])
+                                                            }                                                        }
                                                     }
                                                 }
 
@@ -241,13 +376,25 @@ class FeedService : Service() {
                                                     //notify group messages changed
                                                     when (snapshot.getValue(Int::class.java)) {
                                                         DatabaseOp.ADD.ordinal -> {
-
-                                                        }
-                                                        DatabaseOp.DELETE.ordinal -> {
-                                                            //data value is user uid
-                                                        }
-                                                        DatabaseOp.MODIFY.ordinal -> {
-
+                                                            database.getReference("user_messages/$groupUID/static/description")
+                                                                .get()
+                                                                .addOnCompleteListener { data ->
+                                                                    val description =
+                                                                        data.result.getValue(String::class.java)
+                                                                    groupNotifs.add(
+                                                                        groupNotif.setContentText(
+                                                                            description
+                                                                        ).build()
+                                                                    )
+                                                                    if (groupNotifs.size>3) {
+                                                                        groupNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0..groupNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                    }
+                                                                }
                                                         }
                                                     }
                                                 }

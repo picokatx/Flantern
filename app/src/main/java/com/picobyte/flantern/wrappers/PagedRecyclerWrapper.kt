@@ -100,7 +100,7 @@ class PagedRecyclerWrapper<T>(
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (isLiveLoaded) {
-                        when (snapshot.getValue(Int::class.java)) {
+                        when (snapshot.child("op").getValue(Int::class.java)) {
                             DatabaseOp.ADD.ordinal -> {
                                 ref.child("static/${snapshot.key}").get().addOnCompleteListener {
                                     val temp = Pair(it.result.key!!, it.result.getValue(type)!!)

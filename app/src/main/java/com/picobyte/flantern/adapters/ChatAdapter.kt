@@ -5,9 +5,6 @@ import android.media.MediaDataSource
 import android.media.MediaPlayer
 import android.os.Environment
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.MediaController
 import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.MainActivity
@@ -20,7 +17,12 @@ import android.content.Context.DOWNLOAD_SERVICE
 import androidx.core.content.ContextCompat.getSystemService
 
 import android.app.DownloadManager
+import android.view.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import android.view.ContextMenu.ContextMenuInfo
+
+import android.view.ContextMenu
 
 
 class ChatAdapter(
@@ -35,7 +37,7 @@ class ChatAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bindItems(groupUID, messagesUID[position].second)
+        holder.bindItems(groupUID, messagesUID[position].first, messagesUID[position].second)
     }
 
     override fun getItemCount(): Int {
@@ -44,7 +46,28 @@ class ChatAdapter(
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val binding = CardMessageBinding.bind(itemView)
-        fun bindItems(groupUID: String, chp: Message) {
+        fun bindItems(groupUID: String, messageUID: String, chp: Message) {
+            (itemView.context as AppCompatActivity).registerForContextMenu(binding.root)
+            binding.root.setOnCreateContextMenuListener { contextMenu, view, contextMenuInfo ->
+                contextMenu.add("Delete").setOnMenuItemClickListener {
+                    (itemView.context as MainActivity).requests.removeMessage(groupUID, messageUID)
+                    true
+                }
+                contextMenu.add("Modify").setOnMenuItemClickListener {
+                    true
+                }
+                contextMenu.add("Add Contact").setOnMenuItemClickListener {
+                    (itemView.context as MainActivity).requests.addContact(chp.user!!)
+                    true
+                }
+                contextMenu.add("Pin").setOnMenuItemClickListener {
+                    (itemView.context as MainActivity).requests.pinMessage(groupUID, chp) {
+
+                    }
+                    true
+                }
+            }
+
             val userMap = (itemView.context as MainActivity).userMap
             if (!userMap.containsKey(chp.user)) {
                 binding.nameField.text = "..."
@@ -82,10 +105,14 @@ class ChatAdapter(
                                 chp.embed,
                                 groupUID
                             ) {
+                                val mediaController = MediaController(itemView.context)
+                                mediaController.setAnchorView(binding.testVideo)
+                                binding.testVideo.setMediaController(mediaController)
                                 binding.testVideo.setVideoURI(it)
                                 binding.testVideo.visibility = View.VISIBLE
                                 binding.testVideo.requestFocus();
-                                binding.testVideo.start();
+                                binding.testVideo.start()
+                                mediaController.show(3000)
                             }
                         }
                         EmbedType.AUDIO.ordinal -> {
@@ -93,10 +120,14 @@ class ChatAdapter(
                                 chp.embed,
                                 groupUID
                             ) {
+                                val mediaController = MediaController(itemView.context)
+                                mediaController.setAnchorView(binding.testVideo)
+                                binding.testVideo.setMediaController(mediaController)
                                 binding.testVideo.setVideoURI(it)
                                 binding.testVideo.visibility = View.VISIBLE
                                 binding.testVideo.requestFocus();
                                 binding.testVideo.start();
+                                //mediaController.show(3000)
                             }
                         }
                         EmbedType.DOCUMENT.ordinal -> {
