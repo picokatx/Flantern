@@ -10,13 +10,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.adapters.ChatAdapter
 import com.picobyte.flantern.adapters.UserAdapter
-import com.picobyte.flantern.databinding.CardMessageBinding
 import com.picobyte.flantern.databinding.FragmentChatDetailsBinding
 import com.picobyte.flantern.types.*
 import com.picobyte.flantern.utils.navigateWithBundle
@@ -65,6 +63,7 @@ class ChatDetailsFragment : Fragment() {
             val usersUID: ArrayList<Pair<Pair<String, String>, User>> =
                 ArrayList<Pair<Pair<String, String>, User>>()
             val adapter: UserAdapter = UserAdapter(usersUID)
+            adapter.groupUID = groupUID
             val layoutManager = LinearLayoutManager(requireActivity())
             binding.membersBarContent.layoutManager = layoutManager
             binding.membersBarContent.adapter = adapter
@@ -108,8 +107,15 @@ class ChatDetailsFragment : Fragment() {
             }
             (context as MainActivity).requests.getRecent(groupUID, { msgUID, message ->
                 val vHolder = ChatAdapter.ViewHolder(binding.pinnedMessage.root)
-                vHolder.bindItems(groupUID, msgUID, message)
+                vHolder.bindItems(groupUID, msgUID, message, container!!)
+            }, { err ->
+                Toast.makeText(
+                    context,
+                    err,
+                    Toast.LENGTH_LONG
+                ).show()
             })
+
             binding.actionBarExit.setOnClickListener {
                 val builder = AlertDialog.Builder(context!!)
                 builder.setMessage("Are you sure you want to exit the group")
@@ -134,19 +140,31 @@ class ChatDetailsFragment : Fragment() {
                 builder.setMessage("Are you sure you want to delete the group")
                     .setPositiveButton("Yes",
                         DialogInterface.OnClickListener { dialog, id ->
-                            (context as MainActivity).requests.deleteGroup(groupUID) {
+                            (context as MainActivity).requests.deleteGroup(groupUID, {
                                 Toast.makeText(
                                     context,
                                     "You deleted $groupName",
                                     Toast.LENGTH_LONG
                                 ).show()
-                            }
+                            }, {
+                                Toast.makeText(
+                                    context,
+                                    "Message Pinned",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            })
                         })
                     .setNegativeButton("Leave",
                         DialogInterface.OnClickListener { dialog, id ->
                         })
                 builder.create().show()
             }
+        }, {
+            Toast.makeText(
+                context,
+                it,
+                Toast.LENGTH_LONG
+            ).show()
         })
         /*val groupRef =
             (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")

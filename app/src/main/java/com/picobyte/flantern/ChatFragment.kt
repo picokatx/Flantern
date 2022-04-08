@@ -36,6 +36,8 @@ import rx.android.schedulers.AndroidSchedulers
 import java.io.*
 import android.view.*
 import android.view.Menu
+import android.widget.Toast
+import androidx.core.net.toUri
 
 
 class ChatFragment : Fragment() {
@@ -62,6 +64,17 @@ class ChatFragment : Fragment() {
             }
         }
     }
+    private val cameraLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            if (result.data != null) {
+                documentURI = result.data!!.data!!
+                documentType = EmbedType.IMAGE
+            }
+        }
+    }
+
     val documentLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -84,7 +97,7 @@ class ChatFragment : Fragment() {
         recyclerView.layoutManager = layoutManager
         val messagesUID: ArrayList<Pair<String, Message>> = ArrayList<Pair<String, Message>>()
         val groupUID: String = arguments?.getString("group_uid")!!
-        val adapter: ChatAdapter = ChatAdapter(groupUID, messagesUID)
+        val adapter: ChatAdapter = ChatAdapter(groupUID, messagesUID, container!!)
         binding.attachContainer.visibility = View.INVISIBLE
         binding.attachBtn.setOnClickListener {
             val cx = (binding.attachBtn.x + binding.attachBtn.width / 2).roundToInt()
@@ -132,6 +145,33 @@ class ChatFragment : Fragment() {
                 galleryLauncher.launch(intent)
             }
         }
+        binding.attachVideo.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val intent = Intent(
+                    Intent.ACTION_PICK,
+                    MediaStore.Images.Media.INTERNAL_CONTENT_URI
+                )
+                intent.type = "video/*";
+                galleryLauncher.launch(intent)
+            }
+        }
+        binding.attachProfile.setOnClickListener {
+
+        }
+        binding.attachCamera.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val intent = Intent(
+                    MediaStore.ACTION_IMAGE_CAPTURE
+                )
+                cameraLauncher.launch(intent)
+            }
+        }
         binding.attachAudio.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
                     requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
@@ -168,6 +208,12 @@ class ChatFragment : Fragment() {
             } else {
                 binding.topBarIcon.setImageResource(R.mipmap.flantern_logo_foreground)
             }
+        }, {
+            Toast.makeText(
+                context,
+                it,
+                Toast.LENGTH_LONG
+            ).show()
         })
         val groupRef =
             (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
@@ -231,9 +277,13 @@ class ChatFragment : Fragment() {
                             .bitRate(1).ready()
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe {
-                                
+                                (context as MainActivity).requests.setGroupMediaDocument(
+                                    embedUUID,
+                                    groupUID,
+                                    out.toUri()
+                                )
+                                embed = Embed(EmbedType.VIDEO.ordinal, embedUUID, extension)
                             }
-                        embed = Embed (EmbedType.VIDEO.ordinal, embedUUID, extension)
                     }
                     EmbedType.AUDIO -> {
                         (context as MainActivity).requests.setGroupMediaDocument(

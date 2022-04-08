@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.picobyte.flantern.MainActivity
 import com.picobyte.flantern.R
 import com.picobyte.flantern.databinding.CardUserBinding
 import com.picobyte.flantern.types.SelectableType
@@ -17,6 +18,7 @@ class UserAdapter(
     RecyclerView.Adapter<UserAdapter.ViewHolder>() {
     val selected: ArrayList<String> = ArrayList<String>()
     var selectable = SelectableType.NONE
+    var groupUID: String? = null
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v: View = LayoutInflater.from(parent.context)
             .inflate(R.layout.card_user, parent, false)
@@ -28,7 +30,8 @@ class UserAdapter(
             usersUID[position].first.second,
             usersUID[position].second,
             selectable,
-            selected
+            selected,
+            groupUID
         )
     }
 
@@ -38,7 +41,15 @@ class UserAdapter(
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val binding = CardUserBinding.bind(itemView)
-        fun bindItems(key: String, user: User, selectable: SelectableType, selected: ArrayList<String>) {
+        fun bindItems(key: String, user: User, selectable: SelectableType, selected: ArrayList<String>, groupUID: String?) {
+            binding.userAdmin.visibility = View.GONE
+            if (groupUID!=null) {
+                (itemView.context as MainActivity).requests.isAdmin(key, groupUID) {
+                    if (it) {
+                        binding.userAdmin.visibility = View.VISIBLE
+                    }
+                }
+            }
             if (selectable == SelectableType.MULTI) {
                 binding.root.isClickable = true
                 binding.root.setOnClickListener {

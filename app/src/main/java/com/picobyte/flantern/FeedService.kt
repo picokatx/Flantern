@@ -68,6 +68,7 @@ class FeedService : Service() {
     val userNotifIds = ArrayList<Int>()
     val groupMessageNotifIds = ArrayList<Int>()
 
+    val unread = HashMap<String, Int>()
     override fun onBind(p0: Intent?): IBinder? {
         auth = Firebase.auth
         database = Firebase.database(getString(R.string.realtime_db_id))
@@ -85,10 +86,84 @@ class FeedService : Service() {
         return null
     }
 
+    fun resetUnreadMessages(groupUID: String) {
+        unread[groupUID] = 0
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val userUID = intent!!.getStringExtra("user_uid")!!
         val userContactsRef = database.getReference("user_contacts/$userUID/has")
         val userGroupsRef = database.getReference("user_groups/$userUID/has")
+
+
+        userGroupsRef.child("static").get().addOnCompleteListener {
+            it.result.children.forEach { child ->
+                val groupUID = child.getValue(String::class.java)!!
+                unread[groupUID] = 0
+                database.getReference("group_messages/$groupUID/live")
+                    .addChildEventListener(object : ChildEventListener {
+                        val uid = groupUID
+                        override fun onChildAdded(
+                            snapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                            if (snapshot.getValue(Int::class.java) == DatabaseOp.ADD.ordinal) {
+                                unread[uid] = unread[uid]?.plus(1)!!
+                            }
+                        }
+
+                        override fun onChildChanged(
+                            snapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                            return
+                        }
+
+                        override fun onChildRemoved(snapshot: DataSnapshot) {
+                            return
+                        }
+
+                        override fun onChildMoved(
+                            snapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                            return
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            return
+                        }
+                    })
+            }
+        }
+        userGroupsRef.child("live").orderByKey().limitToLast(1)
+            .addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    if (snapshot.getValue(Int::class.java) == DatabaseOp.ADD.ordinal) {
+                        userGroupsRef.child("static/${snapshot.key}").get().addOnCompleteListener {
+                            unread[it.result.getValue(String::class.java)!!] = 0
+                        }
+                    }
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    return
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {
+                    return
+                }
+
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                    return
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    return
+                }
+
+            })
+
 
         userContactsRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
@@ -99,9 +174,10 @@ class FeedService : Service() {
                                 .addOnCompleteListener {
                                     val contactUID = it.result.getValue(String::class.java)!!
                                     var username = "User"
-                                    database.getReference("users/$contactUID/static/name").get().addOnCompleteListener { name ->
-                                        username = name.result.getValue(String::class.java)!!
-                                    }
+                                    database.getReference("users/$contactUID/static/name").get()
+                                        .addOnCompleteListener { name ->
+                                            username = name.result.getValue(String::class.java)!!
+                                        }
                                     //notify added contact
                                     userListeners[contactUID] =
                                         database.getReference("users/$contactUID/live").orderByKey()
@@ -125,13 +201,16 @@ class FeedService : Service() {
                                                                             "$username -> $name"
                                                                         ).build()
                                                                     )
-                                                                    if (userNotifs.size>3) {
+                                                                    if (userNotifs.size > 3) {
                                                                         userNotifs.removeAt(0)
                                                                     }
                                                                     for (i in 0..userNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
-                                                                        ).notify(userNotifIds[i], userNotifs[i])
+                                                                        ).notify(
+                                                                            userNotifIds[i],
+                                                                            userNotifs[i]
+                                                                        )
                                                                     }
                                                                     username = name
                                                                 }
@@ -147,13 +226,16 @@ class FeedService : Service() {
                                                                             description
                                                                         ).build()
                                                                     )
-                                                                    if (userNotifs.size>3) {
+                                                                    if (userNotifs.size > 3) {
                                                                         userNotifs.removeAt(0)
                                                                     }
                                                                     for (i in 0..userNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
-                                                                        ).notify(userNotifIds[i], userNotifs[i])
+                                                                        ).notify(
+                                                                            userNotifIds[i],
+                                                                            userNotifs[i]
+                                                                        )
                                                                     }
                                                                 }
                                                         }
@@ -163,13 +245,16 @@ class FeedService : Service() {
                                                                     "$username updated their profile"
                                                                 ).build()
                                                             )
-                                                            if (userNotifs.size>3) {
+                                                            if (userNotifs.size > 3) {
                                                                 userNotifs.removeAt(0)
                                                             }
                                                             for (i in 0..userNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
-                                                                ).notify(userNotifIds[i], userNotifs[i])
+                                                                ).notify(
+                                                                    userNotifIds[i],
+                                                                    userNotifs[i]
+                                                                )
                                                             }
                                                         }
                                                         UserEdit.DELETED.ordinal -> {
@@ -178,13 +263,16 @@ class FeedService : Service() {
                                                                     "$username deleted their account"
                                                                 ).build()
                                                             )
-                                                            if (userNotifs.size>3) {
+                                                            if (userNotifs.size > 3) {
                                                                 userNotifs.removeAt(0)
                                                             }
                                                             for (i in 0..userNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
-                                                                ).notify(userNotifIds[i], userNotifs[i])
+                                                                ).notify(
+                                                                    userNotifIds[i],
+                                                                    userNotifs[i]
+                                                                )
                                                             }
                                                         }
                                                     }
@@ -253,9 +341,10 @@ class FeedService : Service() {
                                 .addOnCompleteListener {
                                     val groupUID = it.result.getValue(String::class.java)!!
                                     var groupName = "Group"
-                                    database.getReference("groups/$groupUID/static/name").get().addOnCompleteListener { name ->
-                                        groupName = name.result.getValue(String::class.java)!!
-                                    }
+                                    database.getReference("groups/$groupUID/static/name").get()
+                                        .addOnCompleteListener { name ->
+                                            groupName = name.result.getValue(String::class.java)!!
+                                        }
                                     groupListeners[groupUID] =
                                         database.getReference("groups/$groupUID/live").orderByKey()
                                             .limitToLast(1)
@@ -277,13 +366,16 @@ class FeedService : Service() {
                                                                             "$groupName -> name"
                                                                         ).build()
                                                                     )
-                                                                    if (groupNotifs.size>3) {
+                                                                    if (groupNotifs.size > 3) {
                                                                         groupNotifs.removeAt(0)
                                                                     }
                                                                     for (i in 0..groupNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
-                                                                        ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                        ).notify(
+                                                                            groupNotifIds[i],
+                                                                            groupNotifs[i]
+                                                                        )
                                                                     }
                                                                 }
                                                         }
@@ -298,13 +390,16 @@ class FeedService : Service() {
                                                                             description
                                                                         ).build()
                                                                     )
-                                                                    if (groupNotifs.size>3) {
+                                                                    if (groupNotifs.size > 3) {
                                                                         groupNotifs.removeAt(0)
                                                                     }
                                                                     for (i in 0..groupNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
-                                                                        ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                        ).notify(
+                                                                            groupNotifIds[i],
+                                                                            groupNotifs[i]
+                                                                        )
                                                                     }
                                                                 }
                                                         }
@@ -314,13 +409,16 @@ class FeedService : Service() {
                                                                     "$groupName updated their profile"
                                                                 ).build()
                                                             )
-                                                            if (groupNotifs.size>3) {
+                                                            if (groupNotifs.size > 3) {
                                                                 groupNotifs.removeAt(0)
                                                             }
                                                             for (i in 0..groupNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
-                                                                ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                ).notify(
+                                                                    groupNotifIds[i],
+                                                                    groupNotifs[i]
+                                                                )
                                                             }
 
                                                         }
@@ -331,14 +429,18 @@ class FeedService : Service() {
                                                                     "group $groupName was deleted"
                                                                 ).build()
                                                             )
-                                                            if (groupNotifs.size>3) {
+                                                            if (groupNotifs.size > 3) {
                                                                 groupNotifs.removeAt(0)
                                                             }
                                                             for (i in 0..groupNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
-                                                                ).notify(groupNotifIds[i], groupNotifs[i])
-                                                            }                                                        }
+                                                                ).notify(
+                                                                    groupNotifIds[i],
+                                                                    groupNotifs[i]
+                                                                )
+                                                            }
+                                                        }
                                                     }
                                                 }
 
@@ -386,13 +488,16 @@ class FeedService : Service() {
                                                                             description
                                                                         ).build()
                                                                     )
-                                                                    if (groupNotifs.size>3) {
+                                                                    if (groupNotifs.size > 3) {
                                                                         groupNotifs.removeAt(0)
                                                                     }
                                                                     for (i in 0..groupNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
-                                                                        ).notify(groupNotifIds[i], groupNotifs[i])
+                                                                        ).notify(
+                                                                            groupNotifIds[i],
+                                                                            groupNotifs[i]
+                                                                        )
                                                                     }
                                                                 }
                                                         }

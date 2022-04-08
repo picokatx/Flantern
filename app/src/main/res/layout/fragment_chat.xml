@@ -146,6 +146,26 @@
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent">
 
+        <ImageButton
+            android:id="@+id/attachProfile"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="32dp"
+            android:src="@drawable/profile"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ImageButton
+            android:id="@+id/attachCamera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:src="@drawable/image_frame"
+            app:layout_constraintEnd_toStartOf="@+id/attachVideo"
+            app:layout_constraintStart_toEndOf="@+id/attachImage"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <ImageView
             android:id="@+id/attachVideo"
             android:layout_width="48dp"

@@ -64,7 +64,13 @@ class HomeFragment : Fragment() {
                     alertDialogView.join.setOnClickListener {
                         (context as MainActivity).requests.joinGroupWithCode(
                             alertDialogView.inviteCodeField.text.toString(),
-                            {},
+                            {
+                                Toast.makeText(
+                                    context,
+                                    "Joined Group",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            },
                             {
                                 Toast.makeText(context, "This invite code is invalid!", Toast.LENGTH_LONG).show()
                             }
