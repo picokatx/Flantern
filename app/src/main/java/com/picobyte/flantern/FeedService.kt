@@ -1,10 +1,15 @@
 package com.picobyte.flantern
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.graphics.Color
+import android.media.AudioAttributes
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.auth.FirebaseAuth
@@ -19,6 +24,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import com.picobyte.flantern.api.FlanternRequests
 import com.picobyte.flantern.types.*
+import com.squareup.picasso.Picasso
 
 const val CHANNEL_ID = "com.picobyte.flantern"
 const val ADD_GROUP_ID = "com.picobyte.flantern.group.add"
@@ -40,25 +46,30 @@ class FeedService : Service() {
         .setContentTitle("Flantern")
         .setContentText("Group was added")
         .setSmallIcon(R.drawable.group)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setGroup(ADD_GROUP_ID)
     val addUserNotif = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Flantern")
         .setContentText("User was added")
         .setSmallIcon(R.drawable.profile)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setGroup(ADD_USER_ID)
     val groupNotif = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Flantern")
         .setContentText("Group details were changed")
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setSmallIcon(R.drawable.group)
         .setGroup(GROUP_ID)
     val userNotif = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Flantern")
         .setContentText("User details were changed")
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setSmallIcon(R.drawable.message)
         .setGroup(USER_ID)
     val groupMessageNotif = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Flantern")
         .setContentText("Message was sent in group")
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setSmallIcon(R.drawable.document)
         .setGroup(GROUP_MESSAGE_ID)
     val groupNotifs = ArrayList<Notification>()
@@ -70,6 +81,14 @@ class FeedService : Service() {
 
     val unread = HashMap<String, Int>()
     override fun onBind(p0: Intent?): IBinder? {
+        return null
+    }
+
+    fun resetUnreadMessages(groupUID: String) {
+        unread[groupUID] = 0
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         auth = Firebase.auth
         database = Firebase.database(getString(R.string.realtime_db_id))
         storage = Firebase.storage
@@ -83,31 +102,47 @@ class FeedService : Service() {
         groupMessageNotifIds.add(7)
         groupMessageNotifIds.add(19)
         groupMessageNotifIds.add(42)
-        return null
-    }
 
-    fun resetUnreadMessages(groupUID: String) {
-        unread[groupUID] = 0
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val userUID = intent!!.getStringExtra("user_uid")!!
         val userContactsRef = database.getReference("user_contacts/$userUID/has")
         val userGroupsRef = database.getReference("user_groups/$userUID/has")
+        val notificationManager =
+            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-
+        if (notificationManager.getNotificationChannel(CHANNEL_ID) == null) {
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val mChannel = NotificationChannel(CHANNEL_ID, "Flantern", importance)
+            val soundAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+            mChannel.description = "Flantern Channel"
+            mChannel.enableLights(true)
+            mChannel.lightColor = Color.RED
+            mChannel.enableVibration(true)
+            mChannel.vibrationPattern = longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400)
+            mChannel.setShowBadge(false)
+            notificationManager.createNotificationChannel(mChannel)
+        }
+        Log.e("Flantern", "Service Started")
         userGroupsRef.child("static").get().addOnCompleteListener {
             it.result.children.forEach { child ->
                 val groupUID = child.getValue(String::class.java)!!
                 unread[groupUID] = 0
-                database.getReference("group_messages/$groupUID/live")
+                database.getReference("group_messages/$groupUID/live").orderByKey().limitToLast(1)
                     .addChildEventListener(object : ChildEventListener {
                         val uid = groupUID
+                        var fakeEventIntercept1 = false
                         override fun onChildAdded(
                             snapshot: DataSnapshot,
                             previousChildName: String?
                         ) {
-                            if (snapshot.getValue(Int::class.java) == DatabaseOp.ADD.ordinal) {
+                            if (!fakeEventIntercept1) {
+                                fakeEventIntercept1 = true
+                                return
+                            }
+                            if (snapshot.child("op")
+                                    .getValue(Int::class.java) == DatabaseOp.ADD.ordinal
+                            ) {
                                 unread[uid] = unread[uid]?.plus(1)!!
                             }
                         }
@@ -138,8 +173,13 @@ class FeedService : Service() {
         }
         userGroupsRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
+                var fakeEventIntercept2 = false
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (snapshot.getValue(Int::class.java) == DatabaseOp.ADD.ordinal) {
+                    if (!fakeEventIntercept2) {
+                        fakeEventIntercept2 = true
+                        return
+                    }
+                    if (snapshot.child("op").getValue(Int::class.java) == DatabaseOp.ADD.ordinal) {
                         userGroupsRef.child("static/${snapshot.key}").get().addOnCompleteListener {
                             unread[it.result.getValue(String::class.java)!!] = 0
                         }
@@ -167,7 +207,12 @@ class FeedService : Service() {
 
         userContactsRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
+                var fakeEventIntercept3 = false
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    if (!fakeEventIntercept3) {
+                        fakeEventIntercept3 = true
+                        return
+                    }
                     when (snapshot.child("op").getValue(Int::class.java)) {
                         DatabaseOp.ADD.ordinal -> {
                             userContactsRef.child("static/${snapshot.key}").get()
@@ -183,13 +228,19 @@ class FeedService : Service() {
                                         database.getReference("users/$contactUID/live").orderByKey()
                                             .limitToLast(1)
                                             .addChildEventListener(object : ChildEventListener {
+                                                var fakeEventIntercept4 = false
                                                 override fun onChildAdded(
                                                     snapshot: DataSnapshot,
                                                     previousChildName: String?
                                                 ) {
+                                                    if (!fakeEventIntercept4) {
+                                                        fakeEventIntercept4 = true
+                                                        return
+                                                    }
                                                     val key = snapshot.key!!
                                                     //notify contact details changed
-                                                    when (snapshot.getValue(Int::class.java)) {
+                                                    when (snapshot.child("op")
+                                                        .getValue(Int::class.java)) {
                                                         UserEdit.NAME.ordinal -> {
                                                             database.getReference("user/$contactUID/static/name")
                                                                 .get()
@@ -204,7 +255,7 @@ class FeedService : Service() {
                                                                     if (userNotifs.size > 3) {
                                                                         userNotifs.removeAt(0)
                                                                     }
-                                                                    for (i in 0..userNotifs.size) {
+                                                                    for (i in 0 until userNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
                                                                         ).notify(
@@ -229,7 +280,7 @@ class FeedService : Service() {
                                                                     if (userNotifs.size > 3) {
                                                                         userNotifs.removeAt(0)
                                                                     }
-                                                                    for (i in 0..userNotifs.size) {
+                                                                    for (i in 0 until userNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
                                                                         ).notify(
@@ -248,7 +299,7 @@ class FeedService : Service() {
                                                             if (userNotifs.size > 3) {
                                                                 userNotifs.removeAt(0)
                                                             }
-                                                            for (i in 0..userNotifs.size) {
+                                                            for (i in 0 until userNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
                                                                 ).notify(
@@ -266,7 +317,7 @@ class FeedService : Service() {
                                                             if (userNotifs.size > 3) {
                                                                 userNotifs.removeAt(0)
                                                             }
-                                                            for (i in 0..userNotifs.size) {
+                                                            for (i in 0 until userNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
                                                                 ).notify(
@@ -331,16 +382,29 @@ class FeedService : Service() {
                 }
 
             })
+        userGroupsRef.child("static").get().addOnCompleteListener {
+            it.result.children.forEach { child ->
+
+            }
+        }
+
         userGroupsRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
+                var fakeEventIntercept5 = false
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    if (!fakeEventIntercept5) {
+                        fakeEventIntercept5 = true
+                        return
+                    }
                     when (snapshot.child("op").getValue(Int::class.java)) {
                         DatabaseOp.ADD.ordinal -> {
                             //notify group added
+                            Log.e("Flantern", "Group Added")
                             userGroupsRef.child("static/${snapshot.key}").get()
                                 .addOnCompleteListener {
                                     val groupUID = it.result.getValue(String::class.java)!!
                                     var groupName = "Group"
+                                    Log.e("Flantern grouo", groupUID)
                                     database.getReference("groups/$groupUID/static/name").get()
                                         .addOnCompleteListener { name ->
                                             groupName = name.result.getValue(String::class.java)!!
@@ -349,12 +413,18 @@ class FeedService : Service() {
                                         database.getReference("groups/$groupUID/live").orderByKey()
                                             .limitToLast(1)
                                             .addChildEventListener(object : ChildEventListener {
+                                                var fakeEventIntercept6 = false
                                                 override fun onChildAdded(
                                                     snapshot: DataSnapshot,
                                                     previousChildName: String?
                                                 ) {
+                                                    if (!fakeEventIntercept6) {
+                                                        fakeEventIntercept6 = true
+                                                        return
+                                                    }
                                                     //notify group details changed
-                                                    when (snapshot.getValue(Int::class.java)) {
+                                                    when (snapshot.child("op")
+                                                        .getValue(Int::class.java)) {
                                                         GroupEdit.NAME.ordinal -> {
                                                             database.getReference("user/$groupUID/static/name")
                                                                 .get()
@@ -369,7 +439,7 @@ class FeedService : Service() {
                                                                     if (groupNotifs.size > 3) {
                                                                         groupNotifs.removeAt(0)
                                                                     }
-                                                                    for (i in 0..groupNotifs.size) {
+                                                                    for (i in 0 until groupNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
                                                                         ).notify(
@@ -393,7 +463,7 @@ class FeedService : Service() {
                                                                     if (groupNotifs.size > 3) {
                                                                         groupNotifs.removeAt(0)
                                                                     }
-                                                                    for (i in 0..groupNotifs.size) {
+                                                                    for (i in 0 until groupNotifs.size) {
                                                                         NotificationManagerCompat.from(
                                                                             this@FeedService
                                                                         ).notify(
@@ -412,7 +482,7 @@ class FeedService : Service() {
                                                             if (groupNotifs.size > 3) {
                                                                 groupNotifs.removeAt(0)
                                                             }
-                                                            for (i in 0..groupNotifs.size) {
+                                                            for (i in 0 until groupNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
                                                                 ).notify(
@@ -432,7 +502,7 @@ class FeedService : Service() {
                                                             if (groupNotifs.size > 3) {
                                                                 groupNotifs.removeAt(0)
                                                             }
-                                                            for (i in 0..groupNotifs.size) {
+                                                            for (i in 0 until groupNotifs.size) {
                                                                 NotificationManagerCompat.from(
                                                                     this@FeedService
                                                                 ).notify(
@@ -467,37 +537,49 @@ class FeedService : Service() {
                                                 }
 
                                             })
+                                    Log.e("Flantern listeners", groupMessageListeners.size.toString())
                                     groupMessageListeners[groupUID] =
                                         database.getReference("group_messages/$groupUID/live")
                                             .orderByKey().limitToLast(1)
                                             .addChildEventListener(object : ChildEventListener {
+                                                var fakeEventIntercept7 = false
                                                 override fun onChildAdded(
                                                     snapshot: DataSnapshot,
                                                     previousChildName: String?
                                                 ) {
+                                                    if (!fakeEventIntercept7) {
+                                                        fakeEventIntercept7 = true
+                                                        return
+                                                    }
+                                                    Log.e("Flantern", "Hello I m running")
                                                     //notify group messages changed
-                                                    when (snapshot.getValue(Int::class.java)) {
+                                                    when (snapshot.child("op")
+                                                        .getValue(Int::class.java)) {
                                                         DatabaseOp.ADD.ordinal -> {
-                                                            database.getReference("user_messages/$groupUID/static/description")
+                                                            Log.e("Flantern", "Message Sent")
+                                                            database.getReference("group_messages/$groupUID/static/${snapshot.key}/content")
                                                                 .get()
                                                                 .addOnCompleteListener { data ->
                                                                     val description =
-                                                                        data.result.getValue(String::class.java)
-                                                                    groupNotifs.add(
-                                                                        groupNotif.setContentText(
+                                                                        data.result.getValue(String::class.java)!!
+                                                                    Log.e("Flantern", description)
+                                                                    groupMessageNotifs.add(
+                                                                        groupMessageNotif.setContentText(
                                                                             description
                                                                         ).build()
                                                                     )
-                                                                    if (groupNotifs.size > 3) {
-                                                                        groupNotifs.removeAt(0)
-                                                                    }
-                                                                    for (i in 0..groupNotifs.size) {
-                                                                        NotificationManagerCompat.from(
-                                                                            this@FeedService
-                                                                        ).notify(
-                                                                            groupNotifIds[i],
-                                                                            groupNotifs[i]
+                                                                    if (groupMessageNotifs.size > 3) {
+                                                                        groupMessageNotifs.removeAt(
+                                                                            0
                                                                         )
+                                                                    }
+                                                                    Log.e("Flantern", groupMessageNotifs.size.toString())
+                                                                    for (i in 0 until groupMessageNotifs.size) {
+                                                                        notificationManager.notify(
+                                                                            groupMessageNotifIds[i],
+                                                                            groupMessageNotifs[i]
+                                                                        )
+                                                                        Log.e("Flantern notif dispatch", i.toString())
                                                                     }
                                                                 }
                                                         }
@@ -527,6 +609,7 @@ class FeedService : Service() {
                                                 }
 
                                             })
+                                    Log.e("Flantern listeners", groupMessageListeners.size.toString())
                                 }
                         }
                         DatabaseOp.DELETE.ordinal -> {

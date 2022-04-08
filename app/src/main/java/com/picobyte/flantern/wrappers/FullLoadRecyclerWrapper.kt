@@ -33,13 +33,14 @@ class FullLoadRecyclerWrapper<T>(
     val repo: ArrayList<Pair<Pair<String, String>, T>>,
     val pageLength: Int
 ) {
-
+    lateinit var listener: ChildEventListener
     lateinit var lastKey: String
     lateinit var firstKey: String
     lateinit var liveKey: String
     val live: ArrayList<Pair<Pair<String, String>, T>> = ArrayList<Pair<Pair<String, String>, T>>()
     var isLiveLoaded: Boolean = false
     fun initializePager() {
+        Log.e("Flantern", "initialise pager is firing")
         keyRef.child("static").orderByKey().limitToLast(pageLength).get().addOnCompleteListener {
             if (it.result.children.count() != 0) {
                 lastKey = it.result.children.first().key!!
@@ -51,10 +52,10 @@ class FullLoadRecyclerWrapper<T>(
                     dataRef.child("${key}/static").get().addOnCompleteListener { user ->
                         val userKeyPair = Pair(Pair(entry.key!!, key), user.result.getValue(type)!!)
                         repo.add(userKeyPair)
+                        live.add(userKeyPair)
                         adapter.notifyItemInserted(repo.size)
                     }
                 }
-                live.addAll(repo)
             }
         }
     }
@@ -120,9 +121,11 @@ class FullLoadRecyclerWrapper<T>(
             }
         }
     }
-
+    fun removeItemListener() {
+        keyRef.child("live").removeEventListener(listener)
+    }
     fun addItemListener() {
-        keyRef.child("live").orderByKey().limitToLast(1)
+        listener = keyRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (isLiveLoaded) {
@@ -137,6 +140,7 @@ class FullLoadRecyclerWrapper<T>(
                                                     Pair(snapshot.key!!, key),
                                                     data.result.getValue(type)!!
                                                 )
+                                            Log.e("Flantern", live.size.toString())
                                             live.add(userKeyPair)
                                             live.removeAt(0)
                                             liveKey = live[0].first.first

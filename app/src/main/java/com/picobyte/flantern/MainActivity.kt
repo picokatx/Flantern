@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         authGoogle = AuthGoogle(this, Firebase.auth)
         authFirebase = AuthFirebase(this, Firebase.auth)
         rtDatabase = Firebase.database(getString(R.string.realtime_db_id))
-        storage = Firebase.storage
+        storage = Firebase.storage("gs://flantern-ea117.appspot.com")
         requests = FlanternRequests(this, rtDatabase, storage, Firebase.auth)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

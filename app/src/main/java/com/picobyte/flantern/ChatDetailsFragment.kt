@@ -17,6 +17,7 @@ import com.picobyte.flantern.adapters.ChatAdapter
 import com.picobyte.flantern.adapters.UserAdapter
 import com.picobyte.flantern.databinding.FragmentChatDetailsBinding
 import com.picobyte.flantern.types.*
+import com.picobyte.flantern.utils.navigateTo
 import com.picobyte.flantern.utils.navigateWithBundle
 import com.picobyte.flantern.wrappers.FullLoadRecyclerWrapper
 
@@ -126,6 +127,7 @@ class ChatDetailsFragment : Fragment() {
                     .setNegativeButton("Leave",
                         DialogInterface.OnClickListener { dialog, id ->
                             (context as MainActivity).requests.leaveGroup(groupUID) {
+                                navigateTo(binding.root, R.id.action_global_HomeFragment)
                                 Toast.makeText(
                                     context,
                                     "You left $groupName",

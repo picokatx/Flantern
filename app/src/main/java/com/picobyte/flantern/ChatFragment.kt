@@ -266,7 +266,8 @@ class ChatFragment : Fragment() {
                         (context as MainActivity).requests.setGroupMediaBitmap(
                             embedUUID,
                             groupUID,
-                            documentURI
+                            documentURI,
+                            R.mipmap.flantern_logo_foreground
                         )
                     }
                     EmbedType.VIDEO -> {

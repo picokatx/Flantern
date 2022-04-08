@@ -27,6 +27,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ContextThemeWrapper
 import com.picobyte.flantern.databinding.DialogInviteCodeBinding
+import com.picobyte.flantern.databinding.DialogUserProfileBinding
 
 
 class ChatAdapter(
@@ -107,6 +108,71 @@ class ChatAdapter(
                         )
                     }
                     dialog.show()
+                    true
+                }
+                contextMenu.add("View Contact").setOnMenuItemClickListener {
+                    val builder = AlertDialog.Builder(
+                        ContextThemeWrapper(itemView.context, R.style.AlertDialogCustom)
+                    )
+                    val alertDialogView =
+                        DialogUserProfileBinding.inflate(
+                            LayoutInflater.from(itemView.context),
+                            container,
+                            false
+                        )
+
+                    (itemView.context as MainActivity).requests.getUser(chp.user!!, {
+                        alertDialogView.userBan.visibility = View.GONE
+                        alertDialogView.userKick.visibility = View.GONE
+                        alertDialogView.userName.text = it.name
+                        alertDialogView.userDescription.text = it.description
+                        (itemView.context as MainActivity).requests.getUserProfileBitmap(
+                            it.profile!!,
+                            { bm ->
+                                alertDialogView.userProfile.setImageBitmap(bm)
+                            })
+                        when (it.status!!) {
+                            Status.ACTIVE.ordinal -> {
+                                alertDialogView.userStatus.setImageResource(R.drawable.active)
+                            }
+                            Status.DONOTDISTURB.ordinal -> {
+                                alertDialogView.userStatus.setImageResource(R.drawable.do_not_disturb)
+                            }
+                            Status.IDLE.ordinal -> {
+                                alertDialogView.userStatus.setImageResource(R.drawable.idle)
+                            }
+                            Status.SLEEP.ordinal -> {
+                                alertDialogView.userStatus.setImageResource(R.drawable.offline)
+                            }
+                        }
+                        (itemView.context as MainActivity).requests.isAdmin(
+                            (itemView.context as MainActivity).authGoogle.getUID(),
+                            groupUID
+                        ) { isAdmin ->
+                            if (isAdmin) {
+                                Log.e("Flantern", "isadmin")
+                                alertDialogView.userBan.visibility = View.VISIBLE
+                                alertDialogView.userBan.setOnClickListener {
+                                    (itemView.context as MainActivity).requests.blacklistUser(chp.user, groupUID, {
+                                        (itemView.context as MainActivity).requests.kickUser(chp.user, groupUID) {
+                                            Toast.makeText(itemView.context, "User has been banned", Toast.LENGTH_LONG).show()
+                                        }
+                                    })
+                                }
+                                alertDialogView.userKick.visibility = View.VISIBLE
+                                alertDialogView.userKick.setOnClickListener {
+                                    (itemView.context as MainActivity).requests.kickUser(chp.user, groupUID) {
+                                        Toast.makeText(itemView.context, "User has been banned", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    builder.setMessage("User Profile")
+                        .setView(alertDialogView.root)
+                        .create()
+                        .show()
+
                     true
                 }
                 contextMenu.add("Add Contact").setOnMenuItemClickListener {

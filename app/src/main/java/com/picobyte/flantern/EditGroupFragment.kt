@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -121,12 +122,14 @@ class EditGroupFragment : Fragment() {
                     System.currentTimeMillis()
                 )
                 (context as MainActivity).requests.createGroup(group, contacts) {
-                    if (imageURI != Uri.EMPTY) {
-                        (context as MainActivity).requests.setGroupMediaBitmap(
-                            embedUUID,
-                            it,
-                            imageURI
-                        )
+                    (context as MainActivity).requests.setGroupMediaBitmap(
+                        embedUUID,
+                        it,
+                        imageURI,
+                        R.mipmap.flantern_logo_foreground
+                    ) {
+                        Log.e("Flantern", "hello edit group am triggering")
+                        navigateTo(binding.root, R.id.action_global_HomeFragment)
                     }
                 }
 
@@ -179,6 +182,7 @@ class EditGroupFragment : Fragment() {
                 ref.get().addOnCompleteListener {
                     val group = it.result.getValue(Group::class.java)!!
                     if (group.name != binding.groupNameField.text.toString()) {
+                        Log.e("Flantern", "hello edit group am triggering")
                         ref.child("name").setValue(binding.groupNameField.text.toString())
                         ref.child("live").push().child("op").setValue(GroupEdit.NAME.ordinal)
                     }
@@ -189,6 +193,7 @@ class EditGroupFragment : Fragment() {
                     if (imageWasChanged) {
                         val embedUUID = UUID.randomUUID().toString()
                         val outputStream = ByteArrayOutputStream()
+                        Log.e("Flantern", "hello edit group am triggering")
                         BitmapFactory.decodeStream(
                             this.context!!.contentResolver.openInputStream(
                                 imageURI
@@ -201,10 +206,11 @@ class EditGroupFragment : Fragment() {
                         ref.child("profile").setValue(embedUUID)
                         ref.child("live").push().child("op").setValue(GroupEdit.PROFILE.ordinal)
                     }
+                    Log.e("Flantern", "hello edit group am triggering")
+                    navigateTo(binding.root, R.id.action_global_HomeFragment)
                 }
 
             }
-            navigateTo(binding.root, R.id.action_global_HomeFragment)
 
         }
         return binding.root

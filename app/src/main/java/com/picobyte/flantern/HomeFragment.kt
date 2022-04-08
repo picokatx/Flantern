@@ -1,6 +1,7 @@
 package com.picobyte.flantern
 
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -36,6 +37,12 @@ class HomeFragment : Fragment() {
         val binding = FragmentHomeBinding.inflate(inflater, container, false)
         val viewPager = binding.homeViewPager
         val tabLayout = binding.homeTabLayout
+
+
+        val service = Intent(context, FeedService::class.java)
+        service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
+        context!!.startService(service)
+
         //val authUID = (context as MainActivity).authGoogle.getUID()
         binding.toolbar.inflateMenu(R.menu.menu_main)
         binding.toolbar.setOnMenuItemClickListener {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
@@ -207,9 +208,22 @@ class FlanternRequests(
     }
 
     fun isAdmin(userUID: String, groupUID: String, callback: (isAdmin: Boolean) -> Unit = {}) {
-        database.getReference("/group_users/$groupUID/admin/static").equalTo(userUID).get()
+        Log.e("Flantern", userUID)
+        Log.e("Flantern", groupUID)
+
+        database.getReference("/group_users/$groupUID/admin/static").get()
             .addOnCompleteListener {
-                callback(it.result.hasChildren())
+                var temp = false
+                for (i in it.result.children) {
+                    if (i.getValue(String::class.java)==userUID) {
+                        callback(true)
+                        temp = true
+                        break
+                    }
+                }
+                if (!temp) {
+                    callback(false)
+                }
             }
     }
 
@@ -359,7 +373,39 @@ class FlanternRequests(
             }
         }
     }
-
+    fun kickUser(userUID: String, groupUID: String, callback: () -> Unit = {}) {
+        val groupUsersRef = database.getReference("/group_users/$groupUID/has")
+        groupUsersRef.child("static").equalTo(userUID).get()
+            .addOnCompleteListener { user ->
+                if (user.result.hasChildren()) {
+                    val groupUserEntry = user.result.children.first()
+                    groupUsersRef.child("live/${groupUserEntry.key}/op").setValue(DatabaseOp.DELETE)
+                    groupUsersRef.child("static/${groupUserEntry.key}").removeValue()
+                        .addOnCompleteListener {
+                            groupUsersRef.child("live/${groupUserEntry.key}/data")
+                                .setValue(userUID)
+                                .addOnCompleteListener {
+                                    database.getReference("/user_groups/${userUID}/has/static")
+                                        .equalTo(groupUID).get().addOnCompleteListener { user ->
+                                            if (user.result.hasChildren()) {
+                                                val userGroupEntry = user.result.children.first()
+                                                database.getReference("/user_groups/${userUID}/has")
+                                                    .child("live/${userGroupEntry.key}/op")
+                                                    .setValue(DatabaseOp.DELETE)
+                                                database.getReference("/user_groups/${userUID}/has")
+                                                    .child("live/${userGroupEntry.key}/data")
+                                                    .setValue(groupUID)
+                                                userGroupEntry.ref.removeValue()
+                                                    .addOnCompleteListener {
+                                                        callback()
+                                                    }
+                                            }
+                                        }
+                                }
+                        }
+                }
+            }
+    }
     fun hasGroup(groupUID: String, userUID: String, callback: (hasGroup: Boolean) -> Unit = {}) {
         database.getReference("/user_groups/$userUID/has/static").equalTo(groupUID).get()
             .addOnCompleteListener {
@@ -534,8 +580,10 @@ class FlanternRequests(
 
     fun createGroup(group: Group, users: ArrayList<String>, callback: (key: String) -> Unit = {}) {
         val ref = database.getReference("/groups").push()
+        Log.e("Flantern", "hello edit group am triggering")
         ref.child("static").setValue(group).addOnCompleteListener {
             ref.child("live").push().child("op").setValue(GroupEdit.CREATED.ordinal)
+            Log.e("Flantern user size", users.size.toString())
             users.forEach {
                 val groupUserRef =
                     database.getReference("/group_users/${ref.key}/has")
@@ -546,24 +594,35 @@ class FlanternRequests(
                     val groupStaticRef = userGroupsRef.child("static").push()
                     userGroupsRef.child("live/${groupStaticRef.key}/op")
                         .setValue(DatabaseOp.ADD.ordinal)
-                    groupStaticRef.setValue(ref.key).addOnCompleteListener {
-                        callback(ref.key!!)
-                    }
+                    groupStaticRef.setValue(ref.key)
                 }
             }
-            this.makeAdmin(auth.uid!!, ref.key!!)
-            val msgRef =
-                database.getReference("/group_messages/${ref.key}/static")
-                    .push()
-            msgRef.setValue(
-                Message(
-                    "Flantern",
-                    "You've created a group!",
-                    System.currentTimeMillis()
-                )
-            )
-            database.getReference("/group_messages/${ref.key}/live/${msgRef.key}/op")
-                .setValue(DatabaseOp.ADD.ordinal)
+            val groupAdminRef = database.getReference("/group_users/${ref.key}/admin")
+            val userAdminRef = database.getReference("/user_groups/${auth.uid}/admin")
+            val groupAdminKey = groupAdminRef.child("static").push().key!!
+            val userAdminKey = userAdminRef.child("static").push().key!!
+            groupAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
+            userAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
+            groupAdminRef.child("static/$groupAdminKey").setValue(auth.uid)
+                .addOnCompleteListener {
+                    userAdminRef.child("static/$userAdminKey").setValue(ref.key).addOnCompleteListener {
+                        val msgRef =
+                            database.getReference("/group_messages/${ref.key}/static")
+                                .push()
+                        database.getReference("/group_messages/${ref.key}/live/${msgRef.key}/op")
+                            .setValue(DatabaseOp.ADD.ordinal)
+                        msgRef.setValue(
+                            Message(
+                                "Flantern",
+                                "You've created a group!",
+                                System.currentTimeMillis()
+                            )
+                        ).addOnCompleteListener {
+                            Log.e("Flantern", "hello edit group am triggering")
+                            callback(ref.key!!)
+                        }
+                    }
+                }
         }
     }
 
@@ -815,21 +874,39 @@ class FlanternRequests(
         profileID: String?,
         groupID: String,
         imageURI: Uri,
+        imageResource: Int,
         callback: (profileID: String) -> Unit = {}
     ) {
         var imageID: String = profileID ?: UUID.randomUUID().toString()
         val outputStream = ByteArrayOutputStream()
-        BitmapFactory.decodeStream(
-            context.contentResolver.openInputStream(
-                imageURI
-            )!!
-        ).compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
-        storage.getReference("$groupID/$imageID.jpg")
-            .putBytes(
-                outputStream.toByteArray()
-            ).addOnCompleteListener {
-                callback(imageID)
-            }
+        if (imageURI!= Uri.EMPTY) {
+            BitmapFactory.decodeStream(
+                context.contentResolver.openInputStream(
+                    imageURI
+                )!!
+            ).compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
+            storage.getReference("$groupID/$imageID.jpg")
+                .putBytes(
+                    outputStream.toByteArray()
+                ).addOnCompleteListener {
+                    callback(imageID)
+                }
+        } else {
+            BitmapFactory.decodeResource(context.resources, imageResource).compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
+            Log.e("Flantern", "what")
+            storage.getReference("$groupID/$imageID.jpg")
+                .putBytes(
+                    outputStream.toByteArray()
+                ).addOnCompleteListener {
+                    callback(imageID)
+                }.addOnCanceledListener {
+                    Log.e("Flantern", "what")
+                }.addOnProgressListener {
+                    Log.e("Flantern", it.bytesTransferred.toString())
+                }
+        }
+
+
     }
 
     fun getGroupMediaDocumentUri(
