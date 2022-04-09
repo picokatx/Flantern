@@ -37,7 +37,7 @@ class SignInFragment : Fragment() {
                         if (!(context as MainActivity).isServiceRunning) {
                             val service = Intent(context, FeedService::class.java)
                             service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
-                            context!!.startService(service)
+                            //context!!.startService(service)
                         }
                         navigateTo(binding.root, R.id.action_global_HomeFragment)
                     },
@@ -45,7 +45,7 @@ class SignInFragment : Fragment() {
                         if (!(context as MainActivity).isServiceRunning) {
                             val service = Intent(context, FeedService::class.java)
                             service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
-                            context!!.startService(service)
+                            //context!!.startService(service)
                         }
                         (context as MainActivity).requests.createNewUser {
                             navigateTo(binding.root, R.id.action_global_HomeFragment)
@@ -83,7 +83,7 @@ class SignInFragment : Fragment() {
                             "Signed in with Firebase",
                             Toast.LENGTH_SHORT
                         ).show()
-                        navigateTo(binding.root, R.id.action_global_HomeFragment)
+                        navigateTo(binding.root, R.id.action_SignInFragment_to_HomeFragment)
                     } else {
                         Toast.makeText(
                             binding.root.context,
@@ -99,6 +99,6 @@ class SignInFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        (binding.root.context as AppCompatActivity).menuInflater.inflate(R.menu.menu_main, menu)
+        //(binding.root.context as AppCompatActivity).menuInflater.inflate(R.menu.menu_main, menu)
     }
 }

@@ -78,8 +78,6 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         appBarConfiguration = AppBarConfiguration(navController.graph)
 
-        authGoogle.signOut()
-        authFirebase.signOut()
         val typeToken = object : TypeToken<List<String>>() {}.type
         adjectives = gson.fromJson(
             resources.openRawResource(R.raw.adjectives).bufferedReader().readText(),
@@ -99,7 +97,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
 

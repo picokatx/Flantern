@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import com.picobyte.flantern.databinding.FragmentSettingsBinding
 import com.picobyte.flantern.types.User
 import com.picobyte.flantern.utils.ONE_MEGABYTE
+import com.picobyte.flantern.utils.navigateUp
 
 class SettingsFragment : Fragment() {
     override fun onCreateView(
@@ -37,6 +38,9 @@ class SettingsFragment : Fragment() {
                 binding.settingsStatus.setSelection(it.status!!)
                 binding.settingsName.addTextChangedListener {
                     binding.confirmBtn.visibility = View.VISIBLE
+                }
+                binding.topBarBack.setOnClickListener {
+                    navigateUp(binding.root)
                 }
                 binding.settingsDescription.addTextChangedListener {
                     binding.confirmBtn.visibility = View.VISIBLE

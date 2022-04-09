@@ -12,8 +12,8 @@
         android:id="@+id/action_join_group"
         android:title="Join Group" />
     <item
-        android:id="@+id/action_starred_messages"
-        android:title="Starred Messages" />
+        android:id="@+id/action_sign_out"
+        android:title="Sign Out" />
     <item
         android:id="@+id/action_settings"
         android:icon="@drawable/settings"

@@ -15,7 +15,7 @@ class FeedItemAdapter(
     RecyclerView.Adapter<FeedItemAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v: View = LayoutInflater.from(parent.context)
-            .inflate(R.layout.card_message, parent, false)
+            .inflate(R.layout.card_feed_item, parent, false)
         return ViewHolder(v)
     }
 
@@ -34,7 +34,7 @@ class FeedItemAdapter(
         fun bindItems(item: FeedItem) {
             binding.nameField.text = item.title
             binding.contentField.text = item.description
-            binding.timestampField.text = getDate(item.timestamp, "dd-MM-yy")
+            binding.timestampField.text = getDate(item.timestamp, "dd MMM HH:mm:ss")
         }
     }
 }

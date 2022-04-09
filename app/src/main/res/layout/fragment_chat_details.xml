@@ -52,7 +52,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:text="loading"
-                    android:textColor="?attr/android:textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceInverse"
                     android:textSize="28sp"
                     app:layout_constraintStart_toEndOf="@+id/topBarIcon"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -64,7 +64,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
                     android:text="loading"
-                    android:textColor="?attr/android:textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceInverse"
                     android:textSize="16sp"
                     app:layout_constraintStart_toEndOf="@+id/topBarIcon"
                     app:layout_constraintTop_toBottomOf="@id/topBarTitle" />
@@ -76,7 +76,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
                     android:text="loading"
-                    android:textColor="?attr/android:textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceInverse"
                     android:textSize="16sp"
                     app:layout_constraintStart_toEndOf="@+id/topBarIcon"
                     app:layout_constraintTop_toBottomOf="@id/topBarMembers" />
@@ -87,7 +87,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="loading"
-                    android:textColor="?attr/android:textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceInverse"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/topBarIcon" />
 
@@ -105,7 +105,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Pinned Message"
-                    android:textColor="?attr/android:textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceInverse"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -147,7 +147,7 @@
                     android:minHeight="48dp"
                     android:padding="12dp"
                     android:text="Message Graph"
-                    android:textColor="?attr/android:textColorPrimary"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent" />
@@ -167,7 +167,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Members"
-                    android:textColor="?attr/android:textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceInverse"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -179,7 +179,7 @@
                     android:minHeight="48dp"
                     android:padding="12dp"
                     android:text="+  Add Member"
-                    android:textColor="?attr/android:textColorPrimary"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -193,7 +193,7 @@
                     android:minHeight="48dp"
                     android:padding="12dp"
                     android:text="+  Generate Invite Code"
-                    android:textColor="?attr/android:textColorPrimary"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="18sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"

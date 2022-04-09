@@ -29,15 +29,31 @@
         android:id="@+id/SignInFragment"
         android:name="com.picobyte.flantern.SignInFragment"
         android:label="SignInFragment"
-        tools:layout="@layout/fragment_sign_in" />
+        tools:layout="@layout/fragment_sign_in" >
+        <action
+            android:id="@+id/action_SignInFragment_to_HomeFragment"
+            app:destination="@id/HomeFragment"
+            app:enterAnim="@animator/slide_right"
+            app:exitAnim="@animator/slide_left" />
+    </fragment>
     <fragment
         android:id="@+id/HomeFragment"
         android:name="com.picobyte.flantern.HomeFragment"
         android:label="HomeFragment"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_HomeFragment_to_SettingsFragment"
+            app:destination="@id/SettingsFragment"
+            app:enterAnim="@animator/slide_right"
+            app:exitAnim="@animator/slide_left"
+            app:popEnterAnim="@animator/slide_right"
+            app:popExitAnim="@animator/slide_left"/>
+    </fragment>
     <action
         android:id="@+id/action_global_HomeFragment"
-        app:destination="@id/HomeFragment" />
+        app:destination="@id/HomeFragment"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim" />
     <fragment
         android:id="@+id/ChatsFragment"
         android:name="com.picobyte.flantern.ChatsFragment"
@@ -99,4 +115,7 @@
     <action
         android:id="@+id/action_global_MessageGraphFragment"
         app:destination="@id/MessageGraphFragment" />
+    <action
+        android:id="@+id/action_global_SignInFragment"
+        app:destination="@id/SignInFragment" />
 </navigation>

@@ -18,6 +18,7 @@ import com.picobyte.flantern.adapters.UserAdapter
 import com.picobyte.flantern.databinding.FragmentChatDetailsBinding
 import com.picobyte.flantern.types.*
 import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateUp
 import com.picobyte.flantern.utils.navigateWithBundle
 import com.picobyte.flantern.wrappers.FullLoadRecyclerWrapper
 
@@ -53,7 +54,10 @@ class ChatDetailsFragment : Fragment() {
             groupName = it.name!!
             binding.topBarTitle.text = it.name
             binding.topBarDescription.text = it.description
-            binding.topBarCreated.text = getDate(it.created!!, "dd/MM/yy")
+            binding.topBarCreated.text = "Created: ${getDate(it.created!!, "dd MMM yy, HH:mm:ss")}"
+            (context as MainActivity).requests.getMemberCount(groupUID) { count->
+                binding.topBarMembers.text = "$count members"
+            }
             if (it.profile != null) {
                 (context as MainActivity).requests.getGroupMediaBitmap(it.profile, groupUID, { bitmap ->
                     binding.topBarIcon.setImageBitmap(bitmap)
@@ -84,12 +88,15 @@ class ChatDetailsFragment : Fragment() {
             pagedRecycler.initializePager()
             pagedRecycler.addItemListener()
             (context as MainActivity).rtDatabase.getReference("group_messages/$groupUID/live").get().addOnCompleteListener { poke ->
-                binding.messageGraphTitle.text = "~${poke.result.childrenCount} Messages"
+                binding.messageGraphTitle.text = "${poke.result.childrenCount} edits"
             }
             binding.messageGraphTitle.setOnClickListener {
                 val bundle = Bundle()
                 bundle.putString("group_uid", groupUID)
                 navigateWithBundle(binding.root, R.id.action_global_MessageGraphFragment, bundle)
+            }
+            binding.backBtn.setOnClickListener {
+                navigateUp(binding.root)
             }
             binding.membersBarAdd.setOnClickListener {
                 val bundle = Bundle()
@@ -100,7 +107,7 @@ class ChatDetailsFragment : Fragment() {
                 )
                 bundle.putString("subtitle_text", "Add Group Members")
                 bundle.putString("user_uid", (context as MainActivity).authGoogle.getUID())
-                bundle.putInt("destination", R.id.action_global_ChatFragment)
+                bundle.putInt("destination", R.id.action_global_ChatDetailsFragment)
                 val destBundle = Bundle()
                 destBundle.putString("group_uid", groupUID)
                 bundle.putBundle("destination_bundle", destBundle)
@@ -114,7 +121,7 @@ class ChatDetailsFragment : Fragment() {
 
                 }
             }
-            (context as MainActivity).requests.getRecent(groupUID, { msgUID, message ->
+            (context as MainActivity).requests.getPinnedMessage(groupUID, { msgUID, message ->
                 val vHolder = ChatAdapter.ViewHolder(binding.pinnedMessage.root)
                 vHolder.bindItems(groupUID, msgUID, message, container!!)
             }, { err ->
@@ -134,7 +141,7 @@ class ChatDetailsFragment : Fragment() {
                         })
                     .setNegativeButton("Leave",
                         DialogInterface.OnClickListener { dialog, id ->
-                            (context as MainActivity).requests.leaveGroup(groupUID) {
+                            (context as MainActivity).requests.kickUser((context as MainActivity).authGoogle.getUID(), groupUID) {
                                 navigateTo(binding.root, R.id.action_global_HomeFragment)
                                 Toast.makeText(
                                     context,
@@ -156,15 +163,16 @@ class ChatDetailsFragment : Fragment() {
                                     "You deleted $groupName",
                                     Toast.LENGTH_LONG
                                 ).show()
-                            }, {
+                                navigateTo(binding.root, R.id.action_global_HomeFragment)
+                            }, { err ->
                                 Toast.makeText(
                                     context,
-                                    "Message Pinned",
+                                    err,
                                     Toast.LENGTH_LONG
                                 ).show()
                             })
                         })
-                    .setNegativeButton("Leave",
+                    .setNegativeButton("No",
                         DialogInterface.OnClickListener { dialog, id ->
                         })
                 builder.create().show()

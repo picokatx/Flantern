@@ -18,6 +18,7 @@ import com.picobyte.flantern.types.RecyclableType
 import com.picobyte.flantern.types.SelectableType
 import com.picobyte.flantern.types.User
 import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateUp
 import com.picobyte.flantern.utils.navigateWithBundle
 import com.picobyte.flantern.wrappers.FullLoadRecyclerWrapper
 import com.picobyte.flantern.wrappers.PagedRecyclerWrapper
@@ -33,6 +34,9 @@ class ItemSelectFragment : Fragment() {
         binding.topBarTitle.text = arguments?.getString("title_text")!!
         binding.topBarSubtitle.text = arguments?.getString("subtitle_text")!!
         binding.itemRecycler.layoutManager = LinearLayoutManager(context)
+        binding.topBarBack.setOnClickListener {
+            navigateUp(binding.root)
+        }
         val userUID = arguments?.getString("user_uid")!!
         val destination = arguments?.getInt("destination")!! // R.id.global_fragment_to_fragment
         val destBundle = arguments?.getBundle("destination_bundle")

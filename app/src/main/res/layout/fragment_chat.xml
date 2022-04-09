@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="loading"
-            android:textColor="?attr/android:textColorPrimary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="20sp"
             app:layout_constraintStart_toEndOf="@+id/topBarIcon"
             app:layout_constraintTop_toTopOf="parent" />
@@ -68,7 +68,7 @@
             android:ellipsize="end"
             android:singleLine="true"
             android:text="loading"
-            android:textColor="?attr/android:textColorPrimary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/topBarIcon" />
@@ -101,8 +101,8 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:hint="Message"
-            android:textColor="?attr/android:textColorPrimary"
-            android:textColorHint="?attr/android:textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textColorHint="?attr/colorOnSurfaceInverse"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/attachBtn"
             app:layout_constraintHorizontal_bias="0.0"

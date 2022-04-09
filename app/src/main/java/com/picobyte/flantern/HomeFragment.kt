@@ -106,11 +106,12 @@ class HomeFragment : Fragment() {
                         .create()
                         .show()
                 }
-                R.id.action_starred_messages -> {
-
-                }
                 R.id.action_settings -> {
-                    navigateTo(binding.root, R.id.action_global_SettingsFragment)
+                    navigateTo(binding.root, R.id.action_HomeFragment_to_SettingsFragment)
+                }
+                R.id.action_sign_out -> {
+                    (context as MainActivity).authGoogle.signOut()
+                    navigateTo(binding.root, R.id.action_global_SignInFragment)
                 }
             }
             true

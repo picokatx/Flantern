@@ -16,3 +16,8 @@ fun navigateWithBundle(root: View, destination: Int, bundle: Bundle) {
         R.id.nav_host_fragment_content_main
     ) as NavHostFragment).navController.navigate(destination, bundle)
 }
+fun navigateUp(root: View) {
+    ((root.context as AppCompatActivity).supportFragmentManager.findFragmentById(
+        R.id.nav_host_fragment_content_main
+    ) as NavHostFragment).navController.navigateUp()
+}

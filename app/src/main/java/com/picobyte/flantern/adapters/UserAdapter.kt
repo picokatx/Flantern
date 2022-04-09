@@ -3,6 +3,7 @@ package com.picobyte.flantern.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.picobyte.flantern.MainActivity
@@ -43,6 +44,7 @@ class UserAdapter(
         val binding = CardUserBinding.bind(itemView)
         fun bindItems(key: String, user: User, selectable: SelectableType, selected: ArrayList<String>, groupUID: String?) {
             binding.userAdmin.visibility = View.GONE
+            binding.selectedIcon.visibility = View.INVISIBLE
             if (groupUID!=null) {
                 (itemView.context as MainActivity).requests.isAdmin(key, groupUID) {
                     if (it) {
@@ -55,8 +57,10 @@ class UserAdapter(
                 binding.root.setOnClickListener {
                     val idx = selected.indexOf(key)
                     if (idx == -1) {
+                        binding.selectedIcon.visibility = View.VISIBLE
                         selected.add(key)
                     } else {
+                        binding.selectedIcon.visibility = View.INVISIBLE
                         selected.removeAt(idx)
                     }
                 }
@@ -73,18 +77,18 @@ class UserAdapter(
             binding.userName.text = user.name
             binding.userDesc.text = user.description
             when (user.status) {
-                Status.ACTIVE.ordinal -> binding.userProfile.drawable.setTint(
-                    ContextCompat.getColor(itemView.context, R.color.status_active)
-                )
-                Status.DONOTDISTURB.ordinal -> binding.userProfile.drawable.setTint(
-                    ContextCompat.getColor(itemView.context, R.color.label_text_danger)
-                )
-                Status.IDLE.ordinal -> binding.userProfile.drawable.setTint(
-                    ContextCompat.getColor(itemView.context, R.color.label_text_admin)
-                )
-                Status.SLEEP.ordinal -> binding.userProfile.drawable.setTint(
-                    ContextCompat.getColor(itemView.context, R.color.body_text_secondary)
-                )
+                Status.ACTIVE.ordinal -> {
+                    binding.userStatus.setImageResource(R.drawable.active)
+                }
+                Status.DONOTDISTURB.ordinal -> {
+                    binding.userStatus.setImageResource(R.drawable.do_not_disturb)
+                }
+                Status.IDLE.ordinal -> {
+                    binding.userStatus.setImageResource(R.drawable.idle)
+                }
+                Status.SLEEP.ordinal -> {
+                    binding.userStatus.setImageResource(R.drawable.offline)
+                }
             }
             //todo: load user profile
             binding.userProfile.setImageResource(R.mipmap.flantern_logo_foreground)

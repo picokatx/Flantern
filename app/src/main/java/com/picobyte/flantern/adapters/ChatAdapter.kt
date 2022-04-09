@@ -26,6 +26,7 @@ import android.view.ContextMenu
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ContextThemeWrapper
+import com.picobyte.flantern.databinding.DialogEditMessageBinding
 import com.picobyte.flantern.databinding.DialogInviteCodeBinding
 import com.picobyte.flantern.databinding.DialogUserProfileBinding
 
@@ -60,55 +61,58 @@ class ChatAdapter(
         fun bindItems(groupUID: String, messageUID: String, chp: Message, container: ViewGroup) {
             (itemView.context as AppCompatActivity).registerForContextMenu(binding.root)
             binding.root.setOnCreateContextMenuListener { contextMenu, view, contextMenuInfo ->
-                contextMenu.add("Delete").setOnMenuItemClickListener {
-                    (itemView.context as MainActivity).requests.removeMessage(
-                        groupUID,
-                        messageUID,
-                        {
-                            Toast.makeText(itemView.context, "Deleted Message", Toast.LENGTH_LONG)
-                                .show()
-                        },
-                        {
-                            Toast.makeText(itemView.context, it, Toast.LENGTH_LONG).show()
-                        })
-                    true
-                }
-                contextMenu.add("Modify").setOnMenuItemClickListener {
-                    val builder = AlertDialog.Builder(
-                        ContextThemeWrapper(itemView.context, R.style.AlertDialogCustom)
-                    )
-                    val alertDialogView =
-                        DialogInviteCodeBinding.inflate(
-                            LayoutInflater.from(itemView.context),
-                            container,
-                            false
-                        )
-                    val dialog = builder.setMessage("Edit Message")
-                        .setView(alertDialogView.root)
-                        .create()
-                    alertDialogView.join.setOnClickListener {
-                        (itemView.context as MainActivity).requests.modifyMessageContent(
+                if ((itemView.context as MainActivity).authGoogle.getUID()==chp.user) {
+                    contextMenu.add("Delete").setOnMenuItemClickListener {
+                        (itemView.context as MainActivity).requests.removeMessage(
                             groupUID,
                             messageUID,
-                            alertDialogView.inviteCodeField.text.toString(), {
-                                Toast.makeText(
-                                    itemView.context,
-                                    "Message Modified",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                                dialog.dismiss()
-                            }, {
-                                Toast.makeText(
-                                    itemView.context,
-                                    it,
-                                    Toast.LENGTH_LONG
-                                ).show()
-                                dialog.dismiss()
-                            }
-                        )
+                            {
+                                Toast.makeText(itemView.context, "Deleted Message", Toast.LENGTH_LONG)
+                                    .show()
+                            },
+                            {
+                                Toast.makeText(itemView.context, it, Toast.LENGTH_LONG).show()
+                            })
+                        true
                     }
-                    dialog.show()
-                    true
+                    contextMenu.add("Modify").setOnMenuItemClickListener {
+                        val builder = AlertDialog.Builder(
+                            ContextThemeWrapper(itemView.context, R.style.AlertDialogCustom)
+                        )
+                        val alertDialogView =
+                            DialogEditMessageBinding.inflate(
+                                LayoutInflater.from(itemView.context),
+                                container,
+                                false
+                            )
+                        val dialog = builder.setMessage("Edit Message")
+                            .setView(alertDialogView.root)
+                            .create()
+                        alertDialogView.editMessageContentField.setText(chp.content)
+                        alertDialogView.editMessageButton.setOnClickListener {
+                            (itemView.context as MainActivity).requests.modifyMessageContent(
+                                groupUID,
+                                messageUID,
+                                alertDialogView.editMessageContentField.text.toString(), {
+                                    Toast.makeText(
+                                        itemView.context,
+                                        "Message Modified",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    dialog.dismiss()
+                                }, {
+                                    Toast.makeText(
+                                        itemView.context,
+                                        it,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    dialog.dismiss()
+                                }
+                            )
+                        }
+                        dialog.show()
+                        true
+                    }
                 }
                 contextMenu.add("View Contact").setOnMenuItemClickListener {
                     val builder = AlertDialog.Builder(
@@ -161,26 +165,35 @@ class ChatAdapter(
                                 }
                                 alertDialogView.userKick.visibility = View.VISIBLE
                                 alertDialogView.userKick.setOnClickListener {
+                                    Log.e("Flantern", "kick")
                                     (itemView.context as MainActivity).requests.kickUser(chp.user, groupUID) {
-                                        Toast.makeText(itemView.context, "User has been banned", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(itemView.context, "User has been kicked", Toast.LENGTH_LONG).show()
                                     }
                                 }
+                                builder.setMessage("User Profile")
+                                    .setView(alertDialogView.root)
+                                    .create()
+                                    .show()
+                            } else {
+                                builder.setMessage("User Profile")
+                                    .setView(alertDialogView.root)
+                                    .create()
+                                    .show()
                             }
                         }
                     })
-                    builder.setMessage("User Profile")
-                        .setView(alertDialogView.root)
-                        .create()
-                        .show()
-
                     true
                 }
                 contextMenu.add("Add Contact").setOnMenuItemClickListener {
-                    (itemView.context as MainActivity).requests.addContact(chp.user!!)
+                    (itemView.context as MainActivity).requests.addContact(chp.user!!, {
+                        Toast.makeText(itemView.context, "User was added as contact", Toast.LENGTH_LONG).show()
+                    }, {
+                        Toast.makeText(itemView.context, it, Toast.LENGTH_LONG).show()
+                    })
                     true
                 }
                 contextMenu.add("Pin").setOnMenuItemClickListener {
-                    (itemView.context as MainActivity).requests.pinMessage(groupUID, chp, {
+                    (itemView.context as MainActivity).requests.pinMessage(groupUID, messageUID, {
                         Toast.makeText(
                             itemView.context,
                             "Message Pinned",
@@ -321,7 +334,7 @@ class ChatAdapter(
                 binding.imageField.setImageResource(R.mipmap.flantern_logo_foreground)
             }*/
             binding.contentField.text = chp.content
-            binding.timestampField.text = getDate(chp.timestamp!!, "hh:mm:ss")
+            binding.timestampField.text = getDate(chp.timestamp!!, "dd MMM HH:mm:ss")
         }
     }
 }

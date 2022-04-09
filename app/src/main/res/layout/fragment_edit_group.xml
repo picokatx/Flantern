@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="loading"
-            android:textColor="?attr/android:textColorPrimary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="20sp"
             app:layout_constraintStart_toEndOf="@+id/topBarIcon"
             app:layout_constraintTop_toTopOf="parent" />
@@ -57,7 +57,7 @@
             android:ellipsize="end"
             android:singleLine="true"
             android:text="Edit Group"
-            android:textColor="?attr/android:textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceInverse"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/topBarIcon" />
@@ -68,12 +68,13 @@
         android:id="@+id/groupNameField"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:textColor="?attr/android:textColorPrimary"
-        android:textColorHint="?attr/android:textColorSecondary"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
+        android:hint="name"
         android:minHeight="48dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColorHint="?attr/colorOnSurfaceInverse"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topbar"></EditText>
@@ -83,23 +84,24 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:textColor="?attr/android:textColorPrimary"
-        android:textColorHint="?attr/android:textColorSecondary"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
+        android:hint="description"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColorHint="?attr/colorOnSurfaceInverse"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/groupNameField"></EditText>
 
     <ImageView
         android:id="@+id/groupProfileField"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/groupDescField"
-        tools:srcCompat="@drawable/image_frame" />
+        app:srcCompat="@drawable/image_frame" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/proceed"

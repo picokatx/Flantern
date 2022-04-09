@@ -129,9 +129,6 @@ class ChatFragment : Fragment() {
         binding.topBarBack.setOnClickListener {
             navigateTo(binding.root, R.id.action_global_HomeFragment)
         }
-        binding.topbar.setOnClickListener {
-
-        }
         binding.attachImage.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
                     requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
@@ -236,7 +233,7 @@ class ChatFragment : Fragment() {
                 binding.topBarIcon.setImageResource(R.mipmap.flantern_logo_foreground)
             }
         }*/
-        binding.topBarTitle.setOnClickListener {
+        binding.topbar.setOnClickListener {
             val bundle = Bundle()
             bundle.putString("group_uid", groupUID)
             navigateWithBundle(binding.root, R.id.action_global_ChatDetailsFragment, bundle)

@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="loading"
-            android:textColor="?attr/android:textColorPrimary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="20sp"
             app:layout_constraintStart_toEndOf="@+id/topBarIcon"
             app:layout_constraintTop_toTopOf="parent" />
@@ -57,7 +57,7 @@
             android:ellipsize="end"
             android:singleLine="true"
             android:text="Message History"
-            android:textColor="?attr/android:textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceInverse"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/topBarIcon" />

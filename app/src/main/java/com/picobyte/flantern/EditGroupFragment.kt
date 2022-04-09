@@ -23,6 +23,7 @@ import com.picobyte.flantern.databinding.FragmentEditGroupBinding
 import com.picobyte.flantern.types.Group
 import com.picobyte.flantern.types.GroupEdit
 import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateUp
 import java.io.ByteArrayOutputStream
 import java.util.*
 
@@ -107,8 +108,12 @@ class EditGroupFragment : Fragment() {
                 galleryLauncher.launch(intent)
             }
         }
+        binding.topBarBack.setOnClickListener {
+            navigateUp(binding.root)
+        }
         binding.proceed.setOnClickListener {
             //todo: create/edit a group here
+            Log.e("Flantern", "hello click")
             if (groupUID == null) {
                 var embedUUID: String? = null
                 if (imageURI != Uri.EMPTY) {
@@ -121,6 +126,7 @@ class EditGroupFragment : Fragment() {
                     null,
                     System.currentTimeMillis()
                 )
+                Log.e("Flantern", "hello initialize rpoced")
                 (context as MainActivity).requests.createGroup(group, contacts) {
                     (context as MainActivity).requests.setGroupMediaBitmap(
                         embedUUID,
@@ -128,9 +134,8 @@ class EditGroupFragment : Fragment() {
                         imageURI,
                         R.mipmap.flantern_logo_foreground
                     ) {
-                        Log.e("Flantern", "hello edit group am triggering")
-                        navigateTo(binding.root, R.id.action_global_HomeFragment)
                     }
+                    navigateTo(binding.root, R.id.action_global_HomeFragment)
                 }
 
                 /*val ref =

@@ -8,9 +8,13 @@
         <item name="android:editTextColor">@color/body_text_primary</item>
         <item name="android:colorControlActivated">@color/button_focus_primary</item>
         <item name="colorPrimary">@color/message_background_primary</item>
-        <item name="android:textColorPrimary">@color/body_text_primary</item>-->
+        <item name="colorOnSurfaceVariant">@color/body_text_primary</item>-->
+        <!-- android:textColorPrimary-->
         <item name="android:textColorPrimary">@color/body_text_primary</item>
         <item name="android:textColorSecondary">@color/body_text_secondary</item>
+
+        <item name="colorOnSurfaceVariant">@color/body_text_primary</item>
+        <item name="colorOnSurfaceInverse">@color/body_text_secondary</item>
         <item name="colorPrimaryContainer">@color/body_background_primary</item>
         <item name="colorSecondaryContainer">@color/content_background_primary</item>
         <item name="colorPrimary">@color/message_background_primary</item>
@@ -19,8 +23,21 @@
         <item name="colorError">@color/label_text_danger</item>
         <item name="color">@color/label_text_admin</item>
         <item name="android:fontFamily">@font/comicneue_regular</item>
+        <item name="android:contextPopupMenuStyle">@style/ContextMenuStyle</item>
+        <item name="android:itemTextAppearance">@style/myCustomMenuTextAppearance</item>
 
     </style>
+    <style name="myCustomMenuTextAppearance" parent="@android:style/TextAppearance.Widget.IconMenu.Item">
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="ContextMenuStyle"
+        parent="@android:style/TextAppearance.Material.Widget.PopupMenu">
+        <item name="android:popupBackground">@android:color/white</item>
+    </style>
+
+
     <style name="AlertDialogCustom" parent="@android:style/Theme.Dialog">
         <item name="colorAccent">@color/message_background_secondary</item>
         <item name="android:textColorPrimary">@color/body_text_primary</item>

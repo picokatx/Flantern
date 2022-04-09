@@ -126,9 +126,9 @@ class PagedRecyclerWrapper<T>(
                                 }
                             }
                             DatabaseOp.DELETE.ordinal -> {
-                                //todo: fix this in accordance to live/repo implementation
                                 for (i in 0 until repo.size) {
-                                    if (repo[i].first == snapshot.key) {
+                                    val key = snapshot.child("data").getValue(String::class.java)!!
+                                    if (repo[i].first == key) {
                                         repo.removeAt(i)
                                         adapter.notifyItemRemoved(i)
                                         break
@@ -138,11 +138,12 @@ class PagedRecyclerWrapper<T>(
                             DatabaseOp.MODIFY.ordinal -> {
                                 //todo: fix this in accordance to live/repo implementation
                                 for (i in 0 until repo.size) {
-                                    if (repo[i].first == snapshot.key) {
-                                        ref.child("static/${snapshot.key}").get()
+                                    val key = snapshot.child("data").getValue(String::class.java)!!
+                                    if (repo[i].first == key) {
+                                        ref.child("static/$key").get()
                                             .addOnCompleteListener {
                                                 repo[i] = Pair(
-                                                    snapshot.key!!,
+                                                    key,
                                                     it.result.getValue(type)!!
                                                 )
                                                 adapter.notifyItemChanged(i)

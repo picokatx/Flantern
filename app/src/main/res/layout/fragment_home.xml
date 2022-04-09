@@ -44,7 +44,7 @@
             app:tabMaxWidth="0dp"
             app:tabMode="fixed"
             app:tabSelectedTextColor="?attr/android:textColorHighlight"
-            app:tabTextColor="?attr/android:textColorSecondary"
+            app:tabTextColor="?attr/colorOnSurfaceInverse"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <androidx.viewpager2.widget.ViewPager2

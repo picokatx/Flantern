@@ -24,7 +24,7 @@
         android:layout_marginTop="16dp"
         android:text="trol"
         android:textSize="96sp"
-        android:textColor="?attr/android:textColorPrimary"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"

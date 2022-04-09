@@ -35,7 +35,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:text="loading"
-            android:textColor="?attr/android:textColorPrimary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="20sp"
             app:layout_constraintStart_toEndOf="@+id/topBarBack"
             app:layout_constraintTop_toTopOf="parent" />
@@ -49,7 +49,7 @@
             android:ellipsize="end"
             android:singleLine="true"
             android:text="Add Contact"
-            android:textColor="?attr/android:textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceInverse"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/topBarBack" />
@@ -71,8 +71,8 @@
         android:layout_height="48dp"
         android:layout_marginEnd="48dp"
         android:hint="Enter Contact Name"
-        android:textColor="?attr/android:textColorPrimary"
-        android:textColorHint="?attr/android:textColorSecondary"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColorHint="?attr/colorOnSurfaceInverse"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

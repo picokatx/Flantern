@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="loading"
-        android:textColor="?attr/android:textColorPrimary"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -23,7 +23,7 @@
         android:layout_marginTop="8dp"
         android:autoLink="web"
         android:text="loading"
-        android:textColor="?attr/android:textColorPrimary"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/embed_field"
         app:layout_constraintStart_toStartOf="parent"
@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="loading"
-        android:textColor="?attr/android:textColorSecondary"
+        android:textColor="?attr/colorOnSurfaceInverse"
         app:layout_constraintStart_toEndOf="@+id/name_field"
         app:layout_constraintTop_toTopOf="parent" />
 

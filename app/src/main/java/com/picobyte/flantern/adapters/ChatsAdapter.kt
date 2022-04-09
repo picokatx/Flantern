@@ -66,7 +66,7 @@ class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String, String>, Group>>)
             (itemView.context as MainActivity).requests.getRecent(groupUID, { uid, message ->
                 (itemView.context as MainActivity).requests.getUser(message.user!!, { user ->
                     binding.chatRecent.text = "${user.name}: ${message.content}"
-                    binding.chatRecentDate.text = getDate(message.timestamp!!, "hh:mm:ss")
+                    binding.chatRecentDate.text = getDate(message.timestamp!!, "dd MMM HH:mm:ss")
                 })
             }, {
                 Toast.makeText(
@@ -75,6 +75,12 @@ class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String, String>, Group>>)
                     Toast.LENGTH_LONG
                 ).show()
             })
+            if (chp.profile!=null) {
+                (itemView.context as MainActivity).requests.getGroupMediaBitmap(chp.profile, groupUID, {
+                    binding.chatProfile.setImageBitmap(it)
+                })
+            }
+
             (itemView.context as MainActivity).rtDatabase.getReference("group_messages/$groupUID/live")
                 .orderByKey().limitToLast(1).addChildEventListener(object : ChildEventListener {
                     override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -82,7 +88,7 @@ class ChatsAdapter(val groups_UID: ArrayList<Pair<Pair<String, String>, Group>>)
                             (itemView.context as MainActivity).requests.getMessage(groupUID, snapshot.key!!, {
                                 (itemView.context as MainActivity).requests.getUser(it.user!!, { user ->
                                     binding.chatRecent.text = "${user.name}: ${it.content}"
-                                    binding.chatRecentDate.text = getDate(it.timestamp!!, "hh:mm:ss")
+                                    binding.chatRecentDate.text = getDate(it.timestamp!!, "dd MMM HH:mm:ss")
                                     (itemView.context as MainActivity).requests.setRecent(groupUID, it, {}, { err ->
                                         Toast.makeText(
                                             itemView.context,

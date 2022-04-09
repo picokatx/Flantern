@@ -18,6 +18,7 @@ import com.picobyte.flantern.types.DatabaseOp
 import com.picobyte.flantern.types.SelectableType
 import com.picobyte.flantern.types.User
 import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateUp
 import com.picobyte.flantern.utils.navigateWithBundle
 import com.picobyte.flantern.wrappers.PagedRecyclerWrapper
 
@@ -39,6 +40,9 @@ class AddContactFragment : Fragment() {
         val layoutManager = LinearLayoutManager(context)
         binding.contactRecycler.layoutManager = layoutManager
         binding.contactRecycler.adapter = adapter
+        binding.topBarBack.setOnClickListener {
+            navigateUp(binding.root)
+        }
         binding.search.setOnClickListener {
             if (binding.contactNameField.text.length < 4) {
                 Toast.makeText(context, "Search using at least 4 characters!", Toast.LENGTH_LONG)
@@ -101,13 +105,13 @@ class AddContactFragment : Fragment() {
                         ).show()
                     } else {
                         ref.child("static/$key").setValue(adapter.selected[0])
-                        ref.child("live/${key}/op").setValue(DatabaseOp.ADD)
+                        ref.child("live/${key}/op").setValue(DatabaseOp.ADD.ordinal)
                         if (adapter.selected[0] != uid) {
                             val otherRef =
                                 (requireActivity() as MainActivity).rtDatabase.getReference("/user_contacts/${adapter.selected[0]}/has")
                             val otherKey = otherRef.child("static").push().key
                             otherRef.child("static/$otherKey").setValue(uid)
-                            otherRef.child("live/$otherKey/op").setValue(DatabaseOp.ADD)
+                            otherRef.child("live/$otherKey/op").setValue(DatabaseOp.ADD.ordinal)
                         }
                         val bundle = Bundle()
                         bundle.putString("contact_uid", adapter.selected[0])

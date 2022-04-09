@@ -23,7 +23,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:text="Lantern Chat"
-        android:textColor="?attr/android:textColorPrimary"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="16sp"
         app:layout_constraintStart_toEndOf="@+id/chat_profile"
         app:layout_constraintTop_toTopOf="parent" />
@@ -39,7 +39,7 @@
         android:text="+00 0000 0000: Loading..."
         android:ellipsize="end"
         android:singleLine="true"
-        android:textColor="?attr/android:textColorSecondary"
+        android:textColor="?attr/colorOnSurfaceInverse"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/chat_profile"
@@ -52,7 +52,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:text="00/00/0000"
-        android:textColor="?attr/android:textColorSecondary"
+        android:textColor="?attr/colorOnSurfaceInverse"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
