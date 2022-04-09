@@ -1,5 +1,6 @@
 package com.picobyte.flantern
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
@@ -8,6 +9,13 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.NavHostFragment
 import com.picobyte.flantern.databinding.FragmentSignInBinding
 import com.picobyte.flantern.utils.navigateTo
+import androidx.core.content.ContextCompat.getSystemService
+
+import android.app.ActivityManager
+import android.content.Context
+import android.util.Log
+import androidx.core.content.ContextCompat
+
 
 class SignInFragment : Fragment() {
     lateinit var binding: FragmentSignInBinding
@@ -25,9 +33,20 @@ class SignInFragment : Fragment() {
                     .show()
                 (context as MainActivity).requests.getUser((context as MainActivity).authGoogle.getUID(),
                     {
+                        Log.e("Flantern", (context as MainActivity).isServiceRunning.toString())
+                        if (!(context as MainActivity).isServiceRunning) {
+                            val service = Intent(context, FeedService::class.java)
+                            service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
+                            context!!.startService(service)
+                        }
                         navigateTo(binding.root, R.id.action_global_HomeFragment)
                     },
                     {
+                        if (!(context as MainActivity).isServiceRunning) {
+                            val service = Intent(context, FeedService::class.java)
+                            service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
+                            context!!.startService(service)
+                        }
                         (context as MainActivity).requests.createNewUser {
                             navigateTo(binding.root, R.id.action_global_HomeFragment)
                         }

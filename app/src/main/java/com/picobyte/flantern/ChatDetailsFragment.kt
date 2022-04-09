@@ -83,6 +83,14 @@ class ChatDetailsFragment : Fragment() {
             )
             pagedRecycler.initializePager()
             pagedRecycler.addItemListener()
+            (context as MainActivity).rtDatabase.getReference("group_messages/$groupUID/live").get().addOnCompleteListener { poke ->
+                binding.messageGraphTitle.text = "~${poke.result.childrenCount} Messages"
+            }
+            binding.messageGraphTitle.setOnClickListener {
+                val bundle = Bundle()
+                bundle.putString("group_uid", groupUID)
+                navigateWithBundle(binding.root, R.id.action_global_MessageGraphFragment, bundle)
+            }
             binding.membersBarAdd.setOnClickListener {
                 val bundle = Bundle()
                 bundle.putInt("type", RecyclableType.CONTACTS.ordinal)

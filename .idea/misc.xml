@@ -13,6 +13,7 @@
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/drawable/rounded_rectangle.xml" value="0.14947916666666666" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/activity_main.xml" value="0.13333333333333333" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/card_chats.xml" value="0.3333333333333333" />
+        <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/card_feed_item.xml" value="0.3333333333333333" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/card_message.xml" value="0.3333333333333333" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/card_user.xml" value="0.3333333333333333" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/content_main.xml" value="0.12" />
@@ -21,7 +22,7 @@
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/dialog_user_profile.xml" value="0.22" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_add_contact.xml" value="0.22" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_chat.xml" value="0.3333333333333333" />
-        <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_chat_details.xml" value="0.22" />
+        <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_chat_details.xml" value="0.3333333333333333" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_chats.xml" value="0.22" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_chats_tab.xml" value="0.14666666666666667" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_edit_group.xml" value="0.14666666666666667" />
@@ -30,6 +31,7 @@
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_home.xml" value="0.22" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_image_display.xml" value="0.1" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_item_select.xml" value="0.22" />
+        <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_message_graph.xml" value="0.22" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_onboarding_welcome.xml" value="0.13333333333333333" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_second.xml" value="0.14375" />
         <entry key="..\:/Users/Theophilus Lee/AndroidStudioProjects/Flantern/app/src/main/res/layout/fragment_settings.xml" value="0.22" />

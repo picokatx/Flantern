@@ -91,4 +91,12 @@
     <action
         android:id="@+id/action_global_SettingsFragment"
         app:destination="@id/SettingsFragment" />
+    <fragment
+        android:id="@+id/MessageGraphFragment"
+        android:name="com.picobyte.flantern.MessageGraphFragment"
+        android:label="MessageGraphFragment"
+        tools:layout="@layout/fragment_message_graph" />
+    <action
+        android:id="@+id/action_global_MessageGraphFragment"
+        app:destination="@id/MessageGraphFragment" />
 </navigation>

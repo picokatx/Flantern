@@ -6,6 +6,9 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.picobyte.flantern.MainActivity
@@ -30,9 +33,9 @@ class FlanternRequests(
             if (it) {
                 val ref = database.getReference("group_messages/$groupUID")
                 val key = ref.child("static").push().key!!
-                ref.child("live/$key/op").setValue(DatabaseOp.ADD.ordinal)
-                ref.child("static/$key").setValue(item).addOnCompleteListener {
-                    if (it.isSuccessful) {
+                ref.child("static/$key").setValue(item).addOnCompleteListener { msg ->
+                    if (msg.isSuccessful) {
+                        ref.child("live/$key/op").setValue(DatabaseOp.ADD.ordinal)
                         success(key)
                     } else {
                         error("Error occurred while adding message, check your internet connection and try again")
@@ -56,11 +59,11 @@ class FlanternRequests(
                 ref.child("static/$key/user").get().addOnCompleteListener { item ->
                     if (item.result.exists()) {
                         val entryKey = ref.child("live").push().key
-                        ref.child("live/$entryKey/op").setValue(DatabaseOp.DELETE.ordinal)
-                        ref.child("live/$entryKey/data")
-                            .setValue(item.result.getValue(String::class.java))
                         ref.child("static/$key").removeValue().addOnCompleteListener { task ->
                             if (task.isSuccessful) {
+                                ref.child("live/$entryKey/op").setValue(DatabaseOp.DELETE.ordinal)
+                                ref.child("live/$entryKey/data")
+                                    .setValue(item.result.getValue(String::class.java))
                                 success(item.result.getValue(Message::class.java)!!)
                             } else {
                                 error("Error occurred while deleting message, check your internet connection and try again")
@@ -85,9 +88,9 @@ class FlanternRequests(
             if (it) {
                 val ref = database.getReference("group_messages/$groupUID")
                 val entryKey = ref.child("live").push().key
-                ref.child("live/$entryKey/op").setValue(DatabaseOp.MODIFY.ordinal)
                 ref.child("static").child(key).setValue(item).addOnCompleteListener { task ->
                     if (task.isSuccessful) {
+                        ref.child("live/$entryKey/op").setValue(DatabaseOp.MODIFY.ordinal)
                         success()
                     } else {
                         error("Error occurred while modifying message, check your internet connection and try again")
@@ -111,10 +114,10 @@ class FlanternRequests(
             if (it) {
                 val ref = database.getReference("group_messages/$groupUID")
                 val entryKey = ref.child("live").push().key
-                ref.child("live/$entryKey/op").setValue(DatabaseOp.MODIFY.ordinal)
                 ref.child("static/$key/description").setValue(description)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            ref.child("live/$entryKey/op").setValue(DatabaseOp.MODIFY.ordinal)
                             success()
                         } else {
                             error("Unable to modify message content")
@@ -180,11 +183,11 @@ class FlanternRequests(
     ) {
         this.isAdmin(auth.uid!!, groupUID) {
             if (it) {
-                database.getReference("/groups/$groupUID/live").push()
-                    .setValue(GroupEdit.PINNED.ordinal)
                 database.getReference("/groups/$groupUID/static/pin").setValue(msg)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            database.getReference("/groups/$groupUID/live").push()
+                                .setValue(GroupEdit.PINNED.ordinal)
                             success()
                         } else {
                             error("Failed to pin Message")
@@ -215,7 +218,7 @@ class FlanternRequests(
             .addOnCompleteListener {
                 var temp = false
                 for (i in it.result.children) {
-                    if (i.getValue(String::class.java)==userUID) {
+                    if (i.getValue(String::class.java) == userUID) {
                         callback(true)
                         temp = true
                         break
@@ -239,13 +242,15 @@ class FlanternRequests(
                 val userAdminRef = database.getReference("/user_groups/$userUID/admin")
                 val groupAdminKey = groupAdminRef.child("static").push().key!!
                 val userAdminKey = userAdminRef.child("static").push().key!!
-                groupAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
-                userAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
                 groupAdminRef.child("static/$groupAdminKey").setValue(userUID)
                     .addOnCompleteListener {
                         userAdminRef.child("static/$userAdminKey").setValue(groupUID)
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
+                                    groupAdminRef.child("live/$groupAdminKey")
+                                        .setValue(DatabaseOp.ADD.ordinal)
+                                    userAdminRef.child("live/$groupAdminKey")
+                                        .setValue(DatabaseOp.ADD.ordinal)
                                     success()
                                 } else {
                                     error("Failed to promote to admin")
@@ -271,15 +276,16 @@ class FlanternRequests(
                 groupAdminRef.child("static").equalTo(userUID).get().addOnCompleteListener { item ->
                     if (item.result.hasChildren()) {
                         item.result.children.first().ref.removeValue()
-                        groupAdminRef.child("live").push().setValue(DatabaseOp.ADD.ordinal)
                         userAdminRef.child("static").equalTo(groupUID).get()
                             .addOnCompleteListener { user ->
                                 if (user.result.hasChildren()) {
-                                    userAdminRef.child("live").push()
-                                        .setValue(DatabaseOp.ADD.ordinal)
                                     user.result.children.first().ref.removeValue()
                                         .addOnCompleteListener { task ->
                                             if (task.isSuccessful) {
+                                                groupAdminRef.child("live").push()
+                                                    .setValue(DatabaseOp.ADD.ordinal)
+                                                userAdminRef.child("live").push()
+                                                    .setValue(DatabaseOp.ADD.ordinal)
                                                 success()
                                             } else {
                                                 error("Failed to remove admin perms")
@@ -318,15 +324,15 @@ class FlanternRequests(
                     database.getReference("/group_users/$groupUID/blacklist/static").push()
                 val userGroupKey =
                     database.getReference("/user_groups/$userUID/blacklist/static").push()
-                database.getReference("/group_users/$groupUID/blacklist/live/$groupUsersKey")
-                    .setValue(DatabaseOp.ADD.ordinal)
-                database.getReference("/user_groups/$userUID/blacklist/live/$userGroupKey")
-                    .setValue(DatabaseOp.ADD.ordinal)
                 database.getReference("/group_users/$groupUID/blacklist/static/$groupUsersKey")
                     .setValue(userUID).addOnCompleteListener {
                         database.getReference("/user_groups/$userUID/blacklist/static/$userGroupKey")
                             .setValue(groupUID).addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
+                                    database.getReference("/group_users/$groupUID/blacklist/live/$groupUsersKey")
+                                        .setValue(DatabaseOp.ADD.ordinal)
+                                    database.getReference("/user_groups/$userUID/blacklist/live/$userGroupKey")
+                                        .setValue(DatabaseOp.ADD.ordinal)
                                     success()
                                 } else {
                                     error("Failed to blacklist user")
@@ -352,16 +358,19 @@ class FlanternRequests(
                     .addOnCompleteListener { item ->
                         if (item.result.hasChildren()) {
                             item.result.children.first().ref.removeValue()
-                            database.getReference("/group_users/$groupUID/blacklist/live").push()
-                                .setValue(DatabaseOp.DELETE.ordinal)
                             database.getReference("/user_groups/$userUID/blacklist/static")
                                 .equalTo(groupUID).get().addOnCompleteListener { item ->
                                     if (item.result.hasChildren()) {
                                         item.result.children.first().ref.removeValue()
-                                        database.getReference("/user_groups/$userUID/blacklist/live")
-                                            .push()
-                                            .setValue(DatabaseOp.DELETE.ordinal)
-                                        success()
+                                            .addOnCompleteListener {
+                                                database.getReference("/user_groups/$userUID/blacklist/live")
+                                                    .push()
+                                                    .setValue(DatabaseOp.DELETE.ordinal)
+                                                database.getReference("/group_users/$groupUID/blacklist/live")
+                                                    .push()
+                                                    .setValue(DatabaseOp.DELETE.ordinal)
+                                                success()
+                                            }
                                     } else {
                                         error("Failed to whitelist user")
                                     }
@@ -373,39 +382,41 @@ class FlanternRequests(
             }
         }
     }
+
     fun kickUser(userUID: String, groupUID: String, callback: () -> Unit = {}) {
         val groupUsersRef = database.getReference("/group_users/$groupUID/has")
         groupUsersRef.child("static").equalTo(userUID).get()
             .addOnCompleteListener { user ->
                 if (user.result.hasChildren()) {
                     val groupUserEntry = user.result.children.first()
-                    groupUsersRef.child("live/${groupUserEntry.key}/op").setValue(DatabaseOp.DELETE)
                     groupUsersRef.child("static/${groupUserEntry.key}").removeValue()
                         .addOnCompleteListener {
-                            groupUsersRef.child("live/${groupUserEntry.key}/data")
-                                .setValue(userUID)
-                                .addOnCompleteListener {
-                                    database.getReference("/user_groups/${userUID}/has/static")
-                                        .equalTo(groupUID).get().addOnCompleteListener { user ->
-                                            if (user.result.hasChildren()) {
-                                                val userGroupEntry = user.result.children.first()
+                            database.getReference("/user_groups/${userUID}/has/static")
+                                .equalTo(groupUID).get().addOnCompleteListener { user ->
+                                    if (user.result.hasChildren()) {
+                                        val userGroupEntry = user.result.children.first()
+                                        userGroupEntry.ref.removeValue()
+                                            .addOnCompleteListener {
                                                 database.getReference("/user_groups/${userUID}/has")
                                                     .child("live/${userGroupEntry.key}/op")
-                                                    .setValue(DatabaseOp.DELETE)
+                                                    .setValue(DatabaseOp.DELETE.ordinal)
+                                                groupUsersRef.child("live/${groupUserEntry.key}/op")
+                                                    .setValue(DatabaseOp.DELETE.ordinal)
+                                                groupUsersRef.child("live/${groupUserEntry.key}/data")
+                                                    .setValue(userUID)
                                                 database.getReference("/user_groups/${userUID}/has")
                                                     .child("live/${userGroupEntry.key}/data")
                                                     .setValue(groupUID)
-                                                userGroupEntry.ref.removeValue()
-                                                    .addOnCompleteListener {
-                                                        callback()
-                                                    }
+                                                callback()
                                             }
-                                        }
+                                    }
                                 }
+
                         }
                 }
             }
     }
+
     fun hasGroup(groupUID: String, userUID: String, callback: (hasGroup: Boolean) -> Unit = {}) {
         database.getReference("/user_groups/$userUID/has/static").equalTo(groupUID).get()
             .addOnCompleteListener {
@@ -419,29 +430,29 @@ class FlanternRequests(
             .addOnCompleteListener { user ->
                 if (user.result.hasChildren()) {
                     val groupUserEntry = user.result.children.first()
-                    groupUsersRef.child("live/${groupUserEntry.key}/op").setValue(DatabaseOp.DELETE)
                     groupUsersRef.child("static/${groupUserEntry.key}").removeValue()
                         .addOnCompleteListener {
-                            groupUsersRef.child("live/${groupUserEntry.key}/data")
-                                .setValue(auth.currentUser?.uid)
-                                .addOnCompleteListener {
-                                    database.getReference("/user_groups/${auth.currentUser?.uid}/has/static")
-                                        .equalTo(groupUID).get().addOnCompleteListener { user ->
-                                            if (user.result.hasChildren()) {
-                                                val userGroupEntry = user.result.children.first()
+                            database.getReference("/user_groups/${auth.currentUser?.uid}/has/static")
+                                .equalTo(groupUID).get().addOnCompleteListener { user ->
+                                    if (user.result.hasChildren()) {
+                                        val userGroupEntry = user.result.children.first()
+                                        userGroupEntry.ref.removeValue()
+                                            .addOnCompleteListener {
+                                                groupUsersRef.child("live/${groupUserEntry.key}/op")
+                                                    .setValue(DatabaseOp.DELETE.ordinal)
+                                                groupUsersRef.child("live/${groupUserEntry.key}/data")
+                                                    .setValue(auth.currentUser?.uid)
                                                 database.getReference("/user_groups/${auth.currentUser?.uid}/has")
                                                     .child("live/${userGroupEntry.key}/op")
-                                                    .setValue(DatabaseOp.DELETE)
+                                                    .setValue(DatabaseOp.DELETE.ordinal)
                                                 database.getReference("/user_groups/${auth.currentUser?.uid}/has")
                                                     .child("live/${userGroupEntry.key}/data")
                                                     .setValue(groupUID)
-                                                userGroupEntry.ref.removeValue()
-                                                    .addOnCompleteListener {
-                                                        callback()
-                                                    }
+                                                callback()
                                             }
-                                        }
+                                    }
                                 }
+
                         }
                 }
             }
@@ -457,6 +468,53 @@ class FlanternRequests(
         }
     }
 
+    fun getUserName(
+        uid: String,
+        success: (name: String) -> Unit = {},
+        error: (s: String) -> Unit = {}
+    ) {
+        database.getReference("/user/${uid}/static/name").get().addOnCompleteListener {
+            if (it.result.exists()) {
+                success(it.result.getValue(String::class.java)!!)
+            } else {
+                error("User does not exist")
+            }
+        }
+    }
+
+    fun listenForUserName(uid: String, callback: (name: String) -> Unit) {
+        database.getReference("/user/${uid}/live").orderByKey().limitToLast(1)
+            .addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    val operation = snapshot.child("op").getValue(Int::class.java)!!
+                    if (operation == UserEdit.NAME.ordinal)
+                        database.getReference("/user/${uid}/static/name").get()
+                            .addOnCompleteListener {
+                                if (it.result.exists()) {
+                                    callback(it.result.getValue(String::class.java)!!)
+                                }
+                            }
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    return
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {
+                    return
+                }
+
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                    return
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    return
+                }
+
+            })
+    }
+
     fun addContact(contactUID: String, success: () -> Unit = {}, error: () -> Unit = {}) {
         val ref = database.getReference("/user_contacts/$contactUID/has")
         val key = ref.child("static").push().key
@@ -465,14 +523,14 @@ class FlanternRequests(
                 error()
             } else {
                 ref.child("static/$key").setValue(contactUID).addOnCompleteListener {
-                    ref.child("live/${key}/op").setValue(DatabaseOp.ADD)
                     if (contactUID != auth.uid) {
                         val otherRef =
                             database.getReference("/user_contacts/$contactUID/has")
                         val otherKey = otherRef.child("static").push().key
-                        otherRef.child("live/$otherKey/op").setValue(DatabaseOp.ADD)
                         otherRef.child("static/$otherKey").setValue(auth.uid)
                             .addOnCompleteListener {
+                                ref.child("live/${key}/op").setValue(DatabaseOp.ADD.ordinal)
+                                otherRef.child("live/$otherKey/op").setValue(DatabaseOp.ADD.ordinal)
                                 success()
                             }
                     }
@@ -500,27 +558,27 @@ class FlanternRequests(
 
     fun setUserName(name: String, callback: () -> Unit = {}) {
         val ref = database.getReference("/user/${auth.currentUser?.uid}")
-        database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
-            .setValue(UserEdit.NAME.ordinal)
         ref.child("name").setValue(name).addOnCompleteListener {
+            database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
+                .setValue(UserEdit.NAME.ordinal)
             callback()
         }
     }
 
     fun setUserDescription(description: String, callback: () -> Unit = {}) {
         val ref = database.getReference("/user/${auth.currentUser?.uid}")
-        database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
-            .setValue(UserEdit.DESCRIPTION.ordinal)
         ref.child("description").setValue(description).addOnCompleteListener {
+            database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
+                .setValue(UserEdit.DESCRIPTION.ordinal)
             callback()
         }
     }
 
     fun setUserProfile(profile: String, callback: () -> Unit = {}) {
         val ref = database.getReference("/user/${auth.currentUser?.uid}")
-        database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
-            .setValue(UserEdit.PROFILE.ordinal)
         ref.child("profile").setValue(profile).addOnCompleteListener {
+            database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
+                .setValue(UserEdit.PROFILE.ordinal)
             callback()
         }
 
@@ -528,22 +586,31 @@ class FlanternRequests(
 
     fun setUserStatus(status: String, callback: () -> Unit = {}) {
         val ref = database.getReference("/user/${auth.currentUser?.uid}")
-        database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
-            .setValue(UserEdit.STATUS.ordinal)
         ref.child("status").setValue(status).addOnCompleteListener {
+            database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
+                .setValue(UserEdit.STATUS.ordinal)
             callback()
         }
     }
 
     fun setUserData(user: User, callback: () -> Unit = {}) {
-        val ref = database.getReference("/user/${auth.currentUser?.uid}")
+        val ref = database.getReference("/user/${auth.currentUser?.uid}/static")
         ref.child("name").setValue(user.name).addOnCompleteListener {
             ref.child("description").setValue(user.description).addOnCompleteListener {
                 ref.child("profile").setValue(user.profile).addOnCompleteListener {
                     ref.child("status").setValue(user.status).addOnCompleteListener {
                         database.getReference("user/${auth.currentUser?.uid}/live").push()
                             .child("op")
-                            .setValue(UserEdit.CREATED.ordinal)
+                            .setValue(UserEdit.NAME.ordinal)
+                        database.getReference("user/${auth.currentUser?.uid}/live").push()
+                            .child("op")
+                            .setValue(UserEdit.DESCRIPTION.ordinal)
+                        database.getReference("user/${auth.currentUser?.uid}/live").push()
+                            .child("op")
+                            .setValue(UserEdit.PROFILE.ordinal)
+                        database.getReference("user/${auth.currentUser?.uid}/live").push()
+                            .child("op")
+                            .setValue(UserEdit.STATUS.ordinal)
                         callback()
                     }
                 }
@@ -559,15 +626,19 @@ class FlanternRequests(
             Status.ACTIVE.ordinal,
             "8bcbd691-ba4f-4f32-bce2-dff8d4412b66"
         )
-        database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
-            .setValue(UserEdit.CREATED.ordinal)
         database.getReference("user/${auth.currentUser?.uid}/static").setValue(user)
             .addOnCompleteListener {
+                database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")
+                    .setValue(UserEdit.CREATED.ordinal)
                 callback(user)
             }
     }
 
-    fun getGroup(groupUID: String, success: (group: Group) -> Unit = {}, error: (s: String) -> Unit = {}) {
+    fun getGroup(
+        groupUID: String,
+        success: (group: Group) -> Unit = {},
+        error: (s: String) -> Unit = {}
+    ) {
         database.getReference("/groups/$groupUID/static").get().addOnCompleteListener {
             if (it.result.exists()) {
                 val group = it.result.getValue(Group::class.java)!!
@@ -582,7 +653,6 @@ class FlanternRequests(
         val ref = database.getReference("/groups").push()
         Log.e("Flantern", "hello edit group am triggering")
         ref.child("static").setValue(group).addOnCompleteListener {
-            ref.child("live").push().child("op").setValue(GroupEdit.CREATED.ordinal)
             Log.e("Flantern user size", users.size.toString())
             users.forEach {
                 val groupUserRef =
@@ -601,28 +671,29 @@ class FlanternRequests(
             val userAdminRef = database.getReference("/user_groups/${auth.uid}/admin")
             val groupAdminKey = groupAdminRef.child("static").push().key!!
             val userAdminKey = userAdminRef.child("static").push().key!!
-            groupAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
-            userAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
             groupAdminRef.child("static/$groupAdminKey").setValue(auth.uid)
                 .addOnCompleteListener {
-                    userAdminRef.child("static/$userAdminKey").setValue(ref.key).addOnCompleteListener {
-                        val msgRef =
-                            database.getReference("/group_messages/${ref.key}/static")
-                                .push()
-                        database.getReference("/group_messages/${ref.key}/live/${msgRef.key}/op")
-                            .setValue(DatabaseOp.ADD.ordinal)
-                        msgRef.setValue(
-                            Message(
-                                "Flantern",
-                                "You've created a group!",
-                                System.currentTimeMillis()
-                            )
-                        ).addOnCompleteListener {
-                            Log.e("Flantern", "hello edit group am triggering")
-                            callback(ref.key!!)
+                    userAdminRef.child("static/$userAdminKey").setValue(ref.key)
+                        .addOnCompleteListener {
+                            val msgRef =
+                                database.getReference("/group_messages/${ref.key}/static")
+                                    .push()
+                            msgRef.setValue(
+                                Message(
+                                    "Flantern",
+                                    "You've created a group!",
+                                    System.currentTimeMillis()
+                                )
+                            ).addOnCompleteListener {
+                                database.getReference("/group_messages/${ref.key}/live/${msgRef.key}/op")
+                                    .setValue(DatabaseOp.ADD.ordinal)
+                                callback(ref.key!!)
+                            }
                         }
-                    }
                 }
+            groupAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
+            userAdminRef.child("live/$groupAdminKey").setValue(DatabaseOp.ADD.ordinal)
+            ref.child("live").push().child("op").setValue(GroupEdit.CREATED.ordinal)
         }
     }
 
@@ -707,16 +778,17 @@ class FlanternRequests(
             if (it) {
                 val ref = database.getReference("/groups/$groupUID")
                 ref.child("static/name").setValue(group.name).addOnCompleteListener {
-                    ref.child("live").push().child("op").setValue(GroupEdit.NAME.ordinal)
                     ref.child("static/description").setValue(group.description)
                         .addOnCompleteListener {
-                            ref.child("live").push().child("op")
-                                .setValue(GroupEdit.DESCRIPTION.ordinal)
                             ref.child("static/profile").setValue(group.profile)
                                 .addOnCompleteListener { task ->
-                                    ref.child("live").push().child("op")
-                                        .setValue(GroupEdit.PROFILE.ordinal)
                                     if (task.isSuccessful) {
+                                        ref.child("live").push().child("op")
+                                            .setValue(GroupEdit.NAME.ordinal)
+                                        ref.child("live").push().child("op")
+                                            .setValue(GroupEdit.DESCRIPTION.ordinal)
+                                        ref.child("live").push().child("op")
+                                            .setValue(GroupEdit.PROFILE.ordinal)
                                         success()
                                     } else {
                                         error("Failed to set group details")
@@ -734,7 +806,6 @@ class FlanternRequests(
     fun deleteGroup(groupUID: String, success: () -> Unit = {}, error: (s: String) -> Unit = {}) {
         this.isAdmin(auth.uid!!, groupUID) {
             if (it) {
-                database.getReference("groups/$groupUID/live").push().setValue(GroupEdit.DELETED)
                 database.getReference("group_invites").equalTo(groupUID).get()
                     .addOnCompleteListener { task ->
                         task.result.children.forEach { entry ->
@@ -756,6 +827,8 @@ class FlanternRequests(
                                         }
                                         database.getReference("group_users/$groupUID").removeValue()
                                             .addOnCompleteListener {
+                                                database.getReference("groups/$groupUID/live")
+                                                    .push().setValue(GroupEdit.DELETED)
                                                 success()
                                             }
                                     }
@@ -765,7 +838,6 @@ class FlanternRequests(
                 error("Failed to delete group, user does not have admin perms")
             }
         }
-        //todo: add deletes for all other group references (don't forget storage!)
     }
 
     fun deleteUser() {
@@ -778,14 +850,13 @@ class FlanternRequests(
             val groupUsersKey = groupUsersRef.child("static").push().key
             val userRef = database.getReference("/user_groups/$i/has")
             val userGroupsKey = groupUsersRef.child("static").push().key
-            groupUsersRef.child("live/$groupUsersKey/op").setValue(DatabaseOp.ADD)
-            userRef.child("live/$userGroupsKey/op").setValue(DatabaseOp.ADD)
+            userRef.child("static/$userGroupsKey").setValue(groupUID)
                 .addOnCompleteListener {
-                    userRef.child("static/$userGroupsKey").setValue(groupUID)
-                        .addOnCompleteListener {
-                            callback()
-                        }
+                    groupUsersRef.child("live/$groupUsersKey/op").setValue(DatabaseOp.ADD.ordinal)
+                    userRef.child("live/$userGroupsKey/op").setValue(DatabaseOp.ADD.ordinal)
+                    callback()
                 }
+
         }
     }
 
@@ -799,19 +870,21 @@ class FlanternRequests(
                 if (mCode.result.exists()) {
                     val groupUID = mCode.result.getValue(String::class.java)!!
                     this.isBlacklisted(auth.uid!!, groupUID) {
-                        if (it) {
+                        if (!it) {
                             val groupUsersRef = database.getReference("/group_users/$groupUID/has")
                             val groupUsersKey = groupUsersRef.child("static").push().key
-                            groupUsersRef.child("live/$groupUsersKey/op").setValue(DatabaseOp.ADD)
                             val userGroupsRef =
                                 database.getReference("/user_groups/${auth.currentUser?.uid}/has")
                             val userGroupsKey = groupUsersRef.child("static").push().key
-                            userGroupsRef.child("live/$userGroupsKey/op").setValue(DatabaseOp.ADD)
                             groupUsersRef.child("static/$groupUsersKey")
                                 .setValue(auth.currentUser?.uid)
                                 .addOnCompleteListener {
                                     userGroupsRef.child("static/$userGroupsKey").setValue(groupUID)
                                         .addOnCompleteListener {
+                                            groupUsersRef.child("live/$groupUsersKey/op")
+                                                .setValue(DatabaseOp.ADD.ordinal)
+                                            userGroupsRef.child("live/$userGroupsKey/op")
+                                                .setValue(DatabaseOp.ADD.ordinal)
                                             success(groupUID)
                                         }
                                 }
@@ -879,7 +952,7 @@ class FlanternRequests(
     ) {
         var imageID: String = profileID ?: UUID.randomUUID().toString()
         val outputStream = ByteArrayOutputStream()
-        if (imageURI!= Uri.EMPTY) {
+        if (imageURI != Uri.EMPTY) {
             BitmapFactory.decodeStream(
                 context.contentResolver.openInputStream(
                     imageURI
@@ -892,7 +965,8 @@ class FlanternRequests(
                     callback(imageID)
                 }
         } else {
-            BitmapFactory.decodeResource(context.resources, imageResource).compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
+            BitmapFactory.decodeResource(context.resources, imageResource)
+                .compress(Bitmap.CompressFormat.JPEG, 10, outputStream)
             Log.e("Flantern", "what")
             storage.getReference("$groupID/$imageID.jpg")
                 .putBytes(

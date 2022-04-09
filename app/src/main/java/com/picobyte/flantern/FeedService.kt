@@ -1,9 +1,6 @@
 package com.picobyte.flantern
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.content.Intent
 import android.graphics.Color
 import android.media.AudioAttributes
@@ -12,12 +9,11 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.TaskStackBuilder
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
@@ -25,6 +21,13 @@ import com.google.firebase.storage.ktx.storage
 import com.picobyte.flantern.api.FlanternRequests
 import com.picobyte.flantern.types.*
 import com.squareup.picasso.Picasso
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import android.content.IntentFilter
+import android.content.BroadcastReceiver
+import android.content.Context
+
 
 const val CHANNEL_ID = "com.picobyte.flantern"
 const val ADD_GROUP_ID = "com.picobyte.flantern.group.add"
@@ -38,9 +41,19 @@ class FeedService : Service() {
     lateinit var database: FirebaseDatabase
     lateinit var storage: FirebaseStorage
     lateinit var requests: FlanternRequests
+    lateinit var userUID: String
+    lateinit var userContactsRef: DatabaseReference
+    lateinit var userGroupsRef: DatabaseReference
+    lateinit var notificationManager: NotificationManager
+
+    companion object {
+        @JvmStatic var isAlive = false
+    }
+
     val groupListeners = HashMap<String, ChildEventListener>()
     val userListeners = HashMap<String, ChildEventListener>()
     val groupMessageListeners = HashMap<String, ChildEventListener>()
+    lateinit var intentToActivity: PendingIntent
 
     val addGroupNotif = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("Flantern")
@@ -78,8 +91,11 @@ class FeedService : Service() {
     val groupNotifIds = ArrayList<Int>()
     val userNotifIds = ArrayList<Int>()
     val groupMessageNotifIds = ArrayList<Int>()
-
+    val hardcodeCheck = HashMap<String, Boolean>()
+    lateinit var feedContext: Context
     val unread = HashMap<String, Int>()
+    var isStarted = false
+    var testServiceNew = false
     override fun onBind(p0: Intent?): IBinder? {
         return null
     }
@@ -87,8 +103,35 @@ class FeedService : Service() {
     fun resetUnreadMessages(groupUID: String) {
         unread[groupUID] = 0
     }
+    private class ServiceEchoReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            LocalBroadcastManager
+                .getInstance(context)
+                .sendBroadcastSync(Intent("pong"))
+        }
+    }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onCreate() {
+        testServiceNew = true
+        feedContext = this
+        LocalBroadcastManager
+            .getInstance(this)
+            .registerReceiver(ServiceEchoReceiver(), IntentFilter("ping"))
+
+        intentToActivity = TaskStackBuilder.create(this).run {
+            // Add the intent, which inflates the back stack
+            addNextIntentWithParentStack(Intent(this@FeedService, MainActivity::class.java))
+            // Get the PendingIntent containing the entire back stack
+            getPendingIntent(
+                0,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )!!
+        }
+        groupMessageNotif.setContentIntent(intentToActivity)
+        groupNotif.setContentIntent(intentToActivity)
+        userNotif.setContentIntent(intentToActivity)
+        addGroupNotif.setContentIntent(intentToActivity)
+        addUserNotif.setContentIntent(intentToActivity)
         auth = Firebase.auth
         database = Firebase.database(getString(R.string.realtime_db_id))
         storage = Firebase.storage
@@ -103,18 +146,43 @@ class FeedService : Service() {
         groupMessageNotifIds.add(19)
         groupMessageNotifIds.add(42)
 
-        val userUID = intent!!.getStringExtra("user_uid")!!
-        val userContactsRef = database.getReference("user_contacts/$userUID/has")
-        val userGroupsRef = database.getReference("user_groups/$userUID/has")
-        val notificationManager =
+    }
+
+    override fun onDestroy() {
+        isAlive = false
+        testServiceNew = false
+    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.e("Flantern", isAlive.toString())
+        val hardCodeUUID11 = UUID.randomUUID().toString()
+        val hardCodeUUID12 = UUID.randomUUID().toString()
+        val hardCodeUUID13 = UUID.randomUUID().toString()
+        val hardCodeUUID14 = UUID.randomUUID().toString()
+        val hardCodeUUID15 = UUID.randomUUID().toString()
+        val hardCodeUUID16 = UUID.randomUUID().toString()
+        val hardCodeUUID17 = UUID.randomUUID().toString()
+        val hardCodeUUID18 = UUID.randomUUID().toString()
+        val hardCodeUUID19 = UUID.randomUUID().toString()
+        hardcodeCheck[hardCodeUUID11] = false
+        hardcodeCheck[hardCodeUUID12] = false
+        hardcodeCheck[hardCodeUUID13] = false
+        hardcodeCheck[hardCodeUUID14] = false
+        hardcodeCheck[hardCodeUUID15] = false
+        hardcodeCheck[hardCodeUUID16] = false
+        hardcodeCheck[hardCodeUUID17] = false
+        hardcodeCheck[hardCodeUUID18] = false
+        hardcodeCheck[hardCodeUUID19] = false
+
+
+        userUID = intent!!.getStringExtra("user_uid")!!
+        userContactsRef = database.getReference("user_contacts/$userUID/has")
+        userGroupsRef = database.getReference("user_groups/$userUID/has")
+        notificationManager =
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (notificationManager.getNotificationChannel(CHANNEL_ID) == null) {
             val importance = NotificationManager.IMPORTANCE_HIGH
             val mChannel = NotificationChannel(CHANNEL_ID, "Flantern", importance)
-            val soundAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                .build()
             mChannel.description = "Flantern Channel"
             mChannel.enableLights(true)
             mChannel.lightColor = Color.RED
@@ -131,19 +199,25 @@ class FeedService : Service() {
                 database.getReference("group_messages/$groupUID/live").orderByKey().limitToLast(1)
                     .addChildEventListener(object : ChildEventListener {
                         val uid = groupUID
-                        var fakeEventIntercept1 = false
+                        var unread = 0
                         override fun onChildAdded(
                             snapshot: DataSnapshot,
                             previousChildName: String?
                         ) {
-                            if (!fakeEventIntercept1) {
-                                fakeEventIntercept1 = true
-                                return
-                            }
-                            if (snapshot.child("op")
-                                    .getValue(Int::class.java) == DatabaseOp.ADD.ordinal
-                            ) {
-                                unread[uid] = unread[uid]?.plus(1)!!
+                            if (!hardcodeCheck[hardCodeUUID11]!!) {
+                                hardcodeCheck[hardCodeUUID11] = true
+                            } else {
+                                if (snapshot.child("op")
+                                        .getValue(Int::class.java) == DatabaseOp.ADD.ordinal
+                                ) {
+                                    Log.e("Flantern unread", unread.toString())
+                                    unread += 1
+                                    Log.e("Flantern unread", unread.toString())
+                                    val intent = Intent()
+                                    //intent.putExtra("Status", )
+                                    LocalBroadcastManager.getInstance(this@FeedService)
+                                        .sendBroadcast(intent);
+                                }
                             }
                         }
 
@@ -171,17 +245,21 @@ class FeedService : Service() {
                     })
             }
         }
+        val hardCodeUUID = UUID.randomUUID().toString()
+        hardcodeCheck[hardCodeUUID] = false
         userGroupsRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
-                var fakeEventIntercept2 = false
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (!fakeEventIntercept2) {
-                        fakeEventIntercept2 = true
-                        return
-                    }
-                    if (snapshot.child("op").getValue(Int::class.java) == DatabaseOp.ADD.ordinal) {
-                        userGroupsRef.child("static/${snapshot.key}").get().addOnCompleteListener {
-                            unread[it.result.getValue(String::class.java)!!] = 0
+                    if (!hardcodeCheck[hardCodeUUID12]!!) {
+                        hardcodeCheck[hardCodeUUID12] = true
+                    } else {
+                        if (snapshot.child("op")
+                                .getValue(Int::class.java) == DatabaseOp.ADD.ordinal
+                        ) {
+                            userGroupsRef.child("static/${snapshot.key}").get()
+                                .addOnCompleteListener {
+                                    unread[it.result.getValue(String::class.java)!!] = 0
+                                }
                         }
                     }
                 }
@@ -205,161 +283,345 @@ class FeedService : Service() {
             })
 
 
+        /*userGroupsRef.child("static").get().addOnCompleteListener {
+            it.result.children.forEach { item ->
+                val groupUID = item.getValue(String::class.java)!!
+                var groupName = "Group"
+                Log.e("Flantern grouo", groupUID)
+                database.getReference("groups/$groupUID/static/name").get()
+                    .addOnCompleteListener { name ->
+                        groupName = name.result.getValue(String::class.java)!!
+                    }
+                groupListeners[groupUID] = database.getReference("group_messages/$groupUID/live").orderByKey().limitToLast(1).addChildEventListener(object: ChildEventListener {
+                    override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                        Log.e("Flantern", "why are you triggering")
+                        Log.e("Flantern", snapshot.key!!)
+                        NotificationManagerCompat.from(
+                            this@FeedService
+                        ).notify(
+                            0,
+                            userNotif.build()
+                        )
+                    }
+
+                    override fun onChildChanged(
+                        snapshot: DataSnapshot,
+                        previousChildName: String?
+                    ) {
+                        return
+                    }
+
+                    override fun onChildRemoved(snapshot: DataSnapshot) {
+                        return
+                    }
+
+                    override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                        return
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        return
+                    }
+
+                })
+
+            }
+        }*/
+
+        /*userContactsRef.child("static").get().addOnCompleteListener {
+            it.result.children.forEach { item ->
+                val contactUID = item.getValue(String::class.java)!!
+                Log.e("Flantern", contactUID)
+                var username = "User"
+                database.getReference("user/$contactUID/static/name").get()
+                    .addOnCompleteListener { name ->
+                        username = name.result.getValue(String::class.java)!!
+                    }
+                //notify added contact
+                val hardCodeUUID6 = UUID.randomUUID().toString()
+                hardcodeCheck[hardCodeUUID6] = false
+                userListeners[contactUID] =
+                    database.getReference("user/$contactUID/live").orderByKey()
+                        .limitToLast(1)
+                        .addChildEventListener(object : ChildEventListener {
+                            var fakeEventIntercept4 = false
+                            override fun onChildAdded(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                if (!hardcodeCheck[hardCodeUUID6]!!) {
+                                    hardcodeCheck[hardCodeUUID6] = true
+                                } else {
+                                    when (snapshot.child("op")
+                                        .getValue(Int::class.java)) {
+                                        UserEdit.NAME.ordinal -> {
+                                            database.getReference("user/$contactUID/static/name")
+                                                .get()
+                                                .addOnCompleteListener { data ->
+                                                    val name =
+                                                        data.result.getValue(String::class.java)!!
+                                                    userNotifs.add(
+                                                        userNotif.setContentText(
+                                                            "$username -> $name"
+                                                        ).build()
+                                                    )
+                                                    if (userNotifs.size > 3) {
+                                                        userNotifs.removeAt(0)
+                                                    }
+                                                    for (i in 0 until userNotifs.size) {
+                                                        NotificationManagerCompat.from(
+                                                            this@FeedService
+                                                        ).notify(
+                                                            userNotifIds[i],
+                                                            userNotifs[i]
+                                                        )
+                                                    }
+                                                    username = name
+                                                }
+                                        }
+                                        UserEdit.DESCRIPTION.ordinal -> {
+                                            database.getReference("user/$contactUID/static/description")
+                                                .get()
+                                                .addOnCompleteListener { data ->
+                                                    val description =
+                                                        data.result.getValue(String::class.java)
+                                                    userNotifs.add(
+                                                        userNotif.setContentText(
+                                                            description
+                                                        ).build()
+                                                    )
+                                                    if (userNotifs.size > 3) {
+                                                        userNotifs.removeAt(0)
+                                                    }
+                                                    for (i in 0 until userNotifs.size) {
+                                                        NotificationManagerCompat.from(
+                                                            this@FeedService
+                                                        ).notify(
+                                                            userNotifIds[i],
+                                                            userNotifs[i]
+                                                        )
+                                                    }
+                                                }
+                                        }
+                                        UserEdit.PROFILE.ordinal -> {
+                                            userNotifs.add(
+                                                userNotif.setContentText(
+                                                    "$username updated their profile"
+                                                ).build()
+                                            )
+                                            if (userNotifs.size > 3) {
+                                                userNotifs.removeAt(0)
+                                            }
+                                            for (i in 0 until userNotifs.size) {
+                                                NotificationManagerCompat.from(
+                                                    this@FeedService
+                                                ).notify(
+                                                    userNotifIds[i],
+                                                    userNotifs[i]
+                                                )
+                                            }
+                                        }
+                                        UserEdit.DELETED.ordinal -> {
+                                            userNotifs.add(
+                                                userNotif.setContentText(
+                                                    "$username deleted their account"
+                                                ).build()
+                                            )
+                                            if (userNotifs.size > 3) {
+                                                userNotifs.removeAt(0)
+                                            }
+                                            for (i in 0 until userNotifs.size) {
+                                                NotificationManagerCompat.from(
+                                                    this@FeedService
+                                                ).notify(
+                                                    userNotifIds[i],
+                                                    userNotifs[i]
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            override fun onChildChanged(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                return
+                            }
+
+                            override fun onChildRemoved(snapshot: DataSnapshot) {
+                                return
+                            }
+
+                            override fun onChildMoved(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                return
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                return
+                            }
+                        })
+            }
+        }
         userContactsRef.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
                 var fakeEventIntercept3 = false
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (!fakeEventIntercept3) {
-                        fakeEventIntercept3 = true
-                        return
-                    }
-                    when (snapshot.child("op").getValue(Int::class.java)) {
-                        DatabaseOp.ADD.ordinal -> {
-                            userContactsRef.child("static/${snapshot.key}").get()
-                                .addOnCompleteListener {
-                                    val contactUID = it.result.getValue(String::class.java)!!
-                                    var username = "User"
-                                    database.getReference("users/$contactUID/static/name").get()
-                                        .addOnCompleteListener { name ->
-                                            username = name.result.getValue(String::class.java)!!
-                                        }
-                                    //notify added contact
-                                    userListeners[contactUID] =
-                                        database.getReference("users/$contactUID/live").orderByKey()
-                                            .limitToLast(1)
-                                            .addChildEventListener(object : ChildEventListener {
-                                                var fakeEventIntercept4 = false
-                                                override fun onChildAdded(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    if (!fakeEventIntercept4) {
-                                                        fakeEventIntercept4 = true
+                    if (!hardcodeCheck[hardCodeUUID13]!!) {
+                        hardcodeCheck[hardCodeUUID13] = true
+                    } else {
+                        when (snapshot.child("op").getValue(Int::class.java)) {
+                            DatabaseOp.ADD.ordinal -> {
+                                userContactsRef.child("static/${snapshot.key}").get()
+                                    .addOnCompleteListener {
+                                        val contactUID = it.result.getValue(String::class.java)!!
+                                        var username = "User"
+                                        database.getReference("user/$contactUID/static/name").get()
+                                            .addOnCompleteListener { name ->
+                                                username = name.result.getValue(String::class.java)!!
+                                            }
+                                        //notify added contact
+                                        userListeners[contactUID] =
+                                            database.getReference("user/$contactUID/live").orderByKey()
+                                                .limitToLast(1)
+                                                .addChildEventListener(object : ChildEventListener {
+                                                    var fakeEventIntercept4 = false
+                                                    override fun onChildAdded(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        if (!hardcodeCheck[hardCodeUUID14]!!) {
+                                                            hardcodeCheck[hardCodeUUID14] = true
+                                                        } else {
+                                                            val key = snapshot.key!!
+                                                            //notify contact details changed
+                                                            when (snapshot.child("op")
+                                                                .getValue(Int::class.java)) {
+                                                                UserEdit.NAME.ordinal -> {
+                                                                    database.getReference("user/$contactUID/static/name")
+                                                                        .get()
+                                                                        .addOnCompleteListener { data ->
+                                                                            val name =
+                                                                                data.result.getValue(String::class.java)!!
+                                                                            userNotifs.add(
+                                                                                userNotif.setContentText(
+                                                                                    "$username -> $name"
+                                                                                ).build()
+                                                                            )
+                                                                            if (userNotifs.size > 3) {
+                                                                                userNotifs.removeAt(0)
+                                                                            }
+                                                                            for (i in 0 until userNotifs.size) {
+                                                                                NotificationManagerCompat.from(
+                                                                                    this@FeedService
+                                                                                ).notify(
+                                                                                    userNotifIds[i],
+                                                                                    userNotifs[i]
+                                                                                )
+                                                                            }
+                                                                            username = name
+                                                                        }
+                                                                }
+                                                                UserEdit.DESCRIPTION.ordinal -> {
+                                                                    database.getReference("user/$contactUID/static/description")
+                                                                        .get()
+                                                                        .addOnCompleteListener { data ->
+                                                                            val description =
+                                                                                data.result.getValue(String::class.java)
+                                                                            userNotifs.add(
+                                                                                userNotif.setContentText(
+                                                                                    description
+                                                                                ).build()
+                                                                            )
+                                                                            if (userNotifs.size > 3) {
+                                                                                userNotifs.removeAt(0)
+                                                                            }
+                                                                            for (i in 0 until userNotifs.size) {
+                                                                                NotificationManagerCompat.from(
+                                                                                    this@FeedService
+                                                                                ).notify(
+                                                                                    userNotifIds[i],
+                                                                                    userNotifs[i]
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                }
+                                                                UserEdit.PROFILE.ordinal -> {
+                                                                    userNotifs.add(
+                                                                        userNotif.setContentText(
+                                                                            "$username updated their profile"
+                                                                        ).build()
+                                                                    )
+                                                                    if (userNotifs.size > 3) {
+                                                                        userNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0 until userNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(
+                                                                            userNotifIds[i],
+                                                                            userNotifs[i]
+                                                                        )
+                                                                    }
+                                                                }
+                                                                UserEdit.DELETED.ordinal -> {
+                                                                    userNotifs.add(
+                                                                        userNotif.setContentText(
+                                                                            "$username deleted their account"
+                                                                        ).build()
+                                                                    )
+                                                                    if (userNotifs.size > 3) {
+                                                                        userNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0 until userNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(
+                                                                            userNotifIds[i],
+                                                                            userNotifs[i]
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    override fun onChildChanged(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
                                                         return
                                                     }
-                                                    val key = snapshot.key!!
-                                                    //notify contact details changed
-                                                    when (snapshot.child("op")
-                                                        .getValue(Int::class.java)) {
-                                                        UserEdit.NAME.ordinal -> {
-                                                            database.getReference("user/$contactUID/static/name")
-                                                                .get()
-                                                                .addOnCompleteListener { data ->
-                                                                    val name =
-                                                                        data.result.getValue(String::class.java)!!
-                                                                    userNotifs.add(
-                                                                        userNotif.setContentText(
-                                                                            "$username -> $name"
-                                                                        ).build()
-                                                                    )
-                                                                    if (userNotifs.size > 3) {
-                                                                        userNotifs.removeAt(0)
-                                                                    }
-                                                                    for (i in 0 until userNotifs.size) {
-                                                                        NotificationManagerCompat.from(
-                                                                            this@FeedService
-                                                                        ).notify(
-                                                                            userNotifIds[i],
-                                                                            userNotifs[i]
-                                                                        )
-                                                                    }
-                                                                    username = name
-                                                                }
-                                                        }
-                                                        UserEdit.DESCRIPTION.ordinal -> {
-                                                            database.getReference("user/$contactUID/static/description")
-                                                                .get()
-                                                                .addOnCompleteListener { data ->
-                                                                    val description =
-                                                                        data.result.getValue(String::class.java)
-                                                                    userNotifs.add(
-                                                                        userNotif.setContentText(
-                                                                            description
-                                                                        ).build()
-                                                                    )
-                                                                    if (userNotifs.size > 3) {
-                                                                        userNotifs.removeAt(0)
-                                                                    }
-                                                                    for (i in 0 until userNotifs.size) {
-                                                                        NotificationManagerCompat.from(
-                                                                            this@FeedService
-                                                                        ).notify(
-                                                                            userNotifIds[i],
-                                                                            userNotifs[i]
-                                                                        )
-                                                                    }
-                                                                }
-                                                        }
-                                                        UserEdit.PROFILE.ordinal -> {
-                                                            userNotifs.add(
-                                                                userNotif.setContentText(
-                                                                    "$username updated their profile"
-                                                                ).build()
-                                                            )
-                                                            if (userNotifs.size > 3) {
-                                                                userNotifs.removeAt(0)
-                                                            }
-                                                            for (i in 0 until userNotifs.size) {
-                                                                NotificationManagerCompat.from(
-                                                                    this@FeedService
-                                                                ).notify(
-                                                                    userNotifIds[i],
-                                                                    userNotifs[i]
-                                                                )
-                                                            }
-                                                        }
-                                                        UserEdit.DELETED.ordinal -> {
-                                                            userNotifs.add(
-                                                                userNotif.setContentText(
-                                                                    "$username deleted their account"
-                                                                ).build()
-                                                            )
-                                                            if (userNotifs.size > 3) {
-                                                                userNotifs.removeAt(0)
-                                                            }
-                                                            for (i in 0 until userNotifs.size) {
-                                                                NotificationManagerCompat.from(
-                                                                    this@FeedService
-                                                                ).notify(
-                                                                    userNotifIds[i],
-                                                                    userNotifs[i]
-                                                                )
-                                                            }
-                                                        }
+
+                                                    override fun onChildRemoved(snapshot: DataSnapshot) {
+                                                        return
                                                     }
-                                                }
 
-                                                override fun onChildChanged(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    return
-                                                }
+                                                    override fun onChildMoved(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        return
+                                                    }
 
-                                                override fun onChildRemoved(snapshot: DataSnapshot) {
-                                                    return
-                                                }
-
-                                                override fun onChildMoved(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    return
-                                                }
-
-                                                override fun onCancelled(error: DatabaseError) {
-                                                    return
-                                                }
-                                            })
+                                                    override fun onCancelled(error: DatabaseError) {
+                                                        return
+                                                    }
+                                                })
+                                    }
+                            }
+                            DatabaseOp.DELETE.ordinal -> {
+                                //notify deleted contact
+                                val contactUID = snapshot.child("data").getValue(String::class.java)
+                                val listener = userListeners.remove(contactUID)
+                                if (listener != null) {
+                                    database.getReference("user/$contactUID/live")
+                                        .removeEventListener(listener)
                                 }
-                        }
-                        DatabaseOp.DELETE.ordinal -> {
-                            //notify deleted contact
-                            val contactUID = snapshot.child("data").getValue(String::class.java)
-                            val listener = userListeners.remove(contactUID)
-                            if (listener != null) {
-                                database.getReference("users/$contactUID/live")
-                                    .removeEventListener(listener)
                             }
                         }
                     }
@@ -384,7 +646,224 @@ class FeedService : Service() {
             })
         userGroupsRef.child("static").get().addOnCompleteListener {
             it.result.children.forEach { child ->
+                val groupUID = child.getValue(String::class.java)!!
+                var groupName = "Group"
+                Log.e("Flantern grouo", groupUID)
+                database.getReference("groups/$groupUID/static/name").get()
+                    .addOnCompleteListener { name ->
+                        groupName = name.result.getValue(String::class.java)!!
+                    }
+                groupListeners[groupUID] =
+                    database.getReference("groups/$groupUID/live").orderByKey()
+                        .limitToLast(1)
+                        .addChildEventListener(object : ChildEventListener {
+                            var fakeEventIntercept9 = false
+                            override fun onChildAdded(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                if (!hardcodeCheck[hardCodeUUID15]!!) {
+                                    hardcodeCheck[hardCodeUUID15] = true
+                                } else {
+                                    when (snapshot.child("op")
+                                        .getValue(Int::class.java)) {
+                                        GroupEdit.NAME.ordinal -> {
+                                            database.getReference("user/$groupUID/static/name")
+                                                .get()
+                                                .addOnCompleteListener { data ->
+                                                    val name =
+                                                        data.result.getValue(String::class.java)
+                                                    groupNotifs.add(
+                                                        groupNotif.setContentText(
+                                                            "$groupName -> name"
+                                                        ).build()
+                                                    )
+                                                    if (groupNotifs.size > 3) {
+                                                        groupNotifs.removeAt(0)
+                                                    }
+                                                    for (i in 0 until groupNotifs.size) {
+                                                        NotificationManagerCompat.from(
+                                                            this@FeedService
+                                                        ).notify(
+                                                            groupNotifIds[i],
+                                                            groupNotifs[i]
+                                                        )
+                                                    }
+                                                }
+                                        }
+                                        GroupEdit.DESCRIPTION.ordinal -> {
+                                            database.getReference("user/$groupUID/static/description")
+                                                .get()
+                                                .addOnCompleteListener { data ->
+                                                    val description =
+                                                        data.result.getValue(String::class.java)
+                                                    groupNotifs.add(
+                                                        groupNotif.setContentText(
+                                                            description
+                                                        ).build()
+                                                    )
+                                                    if (groupNotifs.size > 3) {
+                                                        groupNotifs.removeAt(0)
+                                                    }
+                                                    for (i in 0 until groupNotifs.size) {
+                                                        NotificationManagerCompat.from(
+                                                            this@FeedService
+                                                        ).notify(
+                                                            groupNotifIds[i],
+                                                            groupNotifs[i]
+                                                        )
+                                                    }
+                                                }
+                                        }
+                                        GroupEdit.PROFILE.ordinal -> {
+                                            groupNotifs.add(
+                                                groupNotif.setContentText(
+                                                    "$groupName updated their profile"
+                                                ).build()
+                                            )
+                                            if (groupNotifs.size > 3) {
+                                                groupNotifs.removeAt(0)
+                                            }
+                                            for (i in 0 until groupNotifs.size) {
+                                                NotificationManagerCompat.from(
+                                                    this@FeedService
+                                                ).notify(
+                                                    groupNotifIds[i],
+                                                    groupNotifs[i]
+                                                )
+                                            }
 
+                                        }
+                                        GroupEdit.DELETED.ordinal -> {
+                                            groupNotifs.add(
+                                                groupNotif.setContentText(
+                                                    "group $groupName was deleted"
+                                                ).build()
+                                            )
+                                            if (groupNotifs.size > 3) {
+                                                groupNotifs.removeAt(0)
+                                            }
+                                            for (i in 0 until groupNotifs.size) {
+                                                NotificationManagerCompat.from(
+                                                    this@FeedService
+                                                ).notify(
+                                                    groupNotifIds[i],
+                                                    groupNotifs[i]
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                //notify group details changed
+
+                            }
+
+                            override fun onChildChanged(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                return
+                            }
+
+                            override fun onChildRemoved(snapshot: DataSnapshot) {
+                                return
+                            }
+
+                            override fun onChildMoved(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                return
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                return
+                            }
+
+                        })
+                Log.e(
+                    "Flantern listeners",
+                    groupMessageListeners.size.toString()
+                )
+                var fakeEventIntercept8 = false
+                groupMessageListeners[groupUID] =
+                    database.getReference("group_messages/$groupUID/live")
+                        .orderByKey().limitToLast(1)
+                        .addChildEventListener(object : ChildEventListener {
+                            override fun onChildAdded(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                Log.e("Flantern oh", snapshot.key!!)
+                                Log.e("Flantern oh", fakeEventIntercept8.toString())
+                                if (!hardcodeCheck[hardCodeUUID16]!!) {
+                                    hardcodeCheck[hardCodeUUID16] = true
+                                } else {
+                                    Log.e("Flantern", "Hello I m running")
+                                    //notify group messages changed
+                                    when (snapshot.child("op")
+                                        .getValue(Int::class.java)) {
+                                        DatabaseOp.ADD.ordinal -> {
+                                            Log.e("Flantern", "Message Sent")
+                                            database.getReference("group_messages/$groupUID/static/${snapshot.key}/content")
+                                                .get()
+                                                .addOnCompleteListener { data ->
+                                                    val description =
+                                                        data.result.getValue(String::class.java)!!
+                                                    Log.e("Flantern", description)
+                                                    groupMessageNotifs.add(
+                                                        groupMessageNotif.setContentText(
+                                                            description
+                                                        ).build()
+                                                    )
+                                                    if (groupMessageNotifs.size > 3) {
+                                                        groupMessageNotifs.removeAt(
+                                                            0
+                                                        )
+                                                    }
+                                                    Log.e(
+                                                        "Flantern",
+                                                        groupMessageNotifs.size.toString()
+                                                    )
+                                                    for (i in 0 until groupMessageNotifs.size) {
+                                                        notificationManager.notify(
+                                                            groupMessageNotifIds[i],
+                                                            groupMessageNotifs[i]
+                                                        )
+                                                        Log.e(
+                                                            "Flantern notif dispatch",
+                                                            i.toString()
+                                                        )
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+
+                            override fun onChildChanged(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                return
+                            }
+
+                            override fun onChildRemoved(snapshot: DataSnapshot) {
+                                return
+                            }
+
+                            override fun onChildMoved(
+                                snapshot: DataSnapshot,
+                                previousChildName: String?
+                            ) {
+                                return
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                return
+                            }
+
+                        })
             }
         }
 
@@ -392,48 +871,108 @@ class FeedService : Service() {
             .addChildEventListener(object : ChildEventListener {
                 var fakeEventIntercept5 = false
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (!fakeEventIntercept5) {
-                        fakeEventIntercept5 = true
-                        return
-                    }
-                    when (snapshot.child("op").getValue(Int::class.java)) {
-                        DatabaseOp.ADD.ordinal -> {
-                            //notify group added
-                            Log.e("Flantern", "Group Added")
-                            userGroupsRef.child("static/${snapshot.key}").get()
-                                .addOnCompleteListener {
-                                    val groupUID = it.result.getValue(String::class.java)!!
-                                    var groupName = "Group"
-                                    Log.e("Flantern grouo", groupUID)
-                                    database.getReference("groups/$groupUID/static/name").get()
-                                        .addOnCompleteListener { name ->
-                                            groupName = name.result.getValue(String::class.java)!!
-                                        }
-                                    groupListeners[groupUID] =
-                                        database.getReference("groups/$groupUID/live").orderByKey()
-                                            .limitToLast(1)
-                                            .addChildEventListener(object : ChildEventListener {
-                                                var fakeEventIntercept6 = false
-                                                override fun onChildAdded(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    if (!fakeEventIntercept6) {
-                                                        fakeEventIntercept6 = true
-                                                        return
-                                                    }
-                                                    //notify group details changed
-                                                    when (snapshot.child("op")
-                                                        .getValue(Int::class.java)) {
-                                                        GroupEdit.NAME.ordinal -> {
-                                                            database.getReference("user/$groupUID/static/name")
-                                                                .get()
-                                                                .addOnCompleteListener { data ->
-                                                                    val name =
-                                                                        data.result.getValue(String::class.java)
+                    if (!hardcodeCheck[hardCodeUUID17]!!) {
+                        hardcodeCheck[hardCodeUUID17] = true
+                    } else {
+                        when (snapshot.child("op").getValue(Int::class.java)) {
+                            DatabaseOp.ADD.ordinal -> {
+                                //notify group added
+                                Log.e("Flantern", "Group Added")
+                                userGroupsRef.child("static/${snapshot.key}").get()
+                                    .addOnCompleteListener {
+                                        val groupUID = it.result.getValue(String::class.java)!!
+                                        var groupName = "Group"
+                                        Log.e("Flantern grouo", groupUID)
+                                        database.getReference("groups/$groupUID/static/name").get()
+                                            .addOnCompleteListener { name ->
+                                                groupName = name.result.getValue(String::class.java)!!
+                                            }
+                                        groupListeners[groupUID] =
+                                            database.getReference("groups/$groupUID/live").orderByKey()
+                                                .limitToLast(1)
+                                                .addChildEventListener(object : ChildEventListener {
+                                                    var fakeEventIntercept6 = false
+                                                    override fun onChildAdded(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        if (!hardcodeCheck[hardCodeUUID18]!!) {
+                                                            hardcodeCheck[hardCodeUUID18] = true
+                                                        } else {
+                                                            when (snapshot.child("op")
+                                                                .getValue(Int::class.java)) {
+                                                                GroupEdit.NAME.ordinal -> {
+                                                                    database.getReference("user/$groupUID/static/name")
+                                                                        .get()
+                                                                        .addOnCompleteListener { data ->
+                                                                            val name =
+                                                                                data.result.getValue(String::class.java)
+                                                                            groupNotifs.add(
+                                                                                groupNotif.setContentText(
+                                                                                    "$groupName -> name"
+                                                                                ).build()
+                                                                            )
+                                                                            if (groupNotifs.size > 3) {
+                                                                                groupNotifs.removeAt(0)
+                                                                            }
+                                                                            for (i in 0 until groupNotifs.size) {
+                                                                                NotificationManagerCompat.from(
+                                                                                    this@FeedService
+                                                                                ).notify(
+                                                                                    groupNotifIds[i],
+                                                                                    groupNotifs[i]
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                }
+                                                                GroupEdit.DESCRIPTION.ordinal -> {
+                                                                    database.getReference("user/$groupUID/static/description")
+                                                                        .get()
+                                                                        .addOnCompleteListener { data ->
+                                                                            val description =
+                                                                                data.result.getValue(String::class.java)
+                                                                            groupNotifs.add(
+                                                                                groupNotif.setContentText(
+                                                                                    description
+                                                                                ).build()
+                                                                            )
+                                                                            if (groupNotifs.size > 3) {
+                                                                                groupNotifs.removeAt(0)
+                                                                            }
+                                                                            for (i in 0 until groupNotifs.size) {
+                                                                                NotificationManagerCompat.from(
+                                                                                    this@FeedService
+                                                                                ).notify(
+                                                                                    groupNotifIds[i],
+                                                                                    groupNotifs[i]
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                }
+                                                                GroupEdit.PROFILE.ordinal -> {
                                                                     groupNotifs.add(
                                                                         groupNotif.setContentText(
-                                                                            "$groupName -> name"
+                                                                            "$groupName updated their profile"
+                                                                        ).build()
+                                                                    )
+                                                                    if (groupNotifs.size > 3) {
+                                                                        groupNotifs.removeAt(0)
+                                                                    }
+                                                                    for (i in 0 until groupNotifs.size) {
+                                                                        NotificationManagerCompat.from(
+                                                                            this@FeedService
+                                                                        ).notify(
+                                                                            groupNotifIds[i],
+                                                                            groupNotifs[i]
+                                                                        )
+                                                                    }
+
+                                                                }
+                                                                GroupEdit.DELETED.ordinal -> {
+                                                                    groupNotifs.add(
+                                                                        groupNotif.setContentText(
+
+                                                                            "group $groupName was deleted"
                                                                         ).build()
                                                                     )
                                                                     if (groupNotifs.size > 3) {
@@ -448,182 +987,135 @@ class FeedService : Service() {
                                                                         )
                                                                     }
                                                                 }
-                                                        }
-                                                        GroupEdit.DESCRIPTION.ordinal -> {
-                                                            database.getReference("user/$groupUID/static/description")
-                                                                .get()
-                                                                .addOnCompleteListener { data ->
-                                                                    val description =
-                                                                        data.result.getValue(String::class.java)
-                                                                    groupNotifs.add(
-                                                                        groupNotif.setContentText(
-                                                                            description
-                                                                        ).build()
-                                                                    )
-                                                                    if (groupNotifs.size > 3) {
-                                                                        groupNotifs.removeAt(0)
-                                                                    }
-                                                                    for (i in 0 until groupNotifs.size) {
-                                                                        NotificationManagerCompat.from(
-                                                                            this@FeedService
-                                                                        ).notify(
-                                                                            groupNotifIds[i],
-                                                                            groupNotifs[i]
-                                                                        )
-                                                                    }
-                                                                }
-                                                        }
-                                                        GroupEdit.PROFILE.ordinal -> {
-                                                            groupNotifs.add(
-                                                                groupNotif.setContentText(
-                                                                    "$groupName updated their profile"
-                                                                ).build()
-                                                            )
-                                                            if (groupNotifs.size > 3) {
-                                                                groupNotifs.removeAt(0)
-                                                            }
-                                                            for (i in 0 until groupNotifs.size) {
-                                                                NotificationManagerCompat.from(
-                                                                    this@FeedService
-                                                                ).notify(
-                                                                    groupNotifIds[i],
-                                                                    groupNotifs[i]
-                                                                )
-                                                            }
-
-                                                        }
-                                                        GroupEdit.DELETED.ordinal -> {
-                                                            groupNotifs.add(
-                                                                groupNotif.setContentText(
-
-                                                                    "group $groupName was deleted"
-                                                                ).build()
-                                                            )
-                                                            if (groupNotifs.size > 3) {
-                                                                groupNotifs.removeAt(0)
-                                                            }
-                                                            for (i in 0 until groupNotifs.size) {
-                                                                NotificationManagerCompat.from(
-                                                                    this@FeedService
-                                                                ).notify(
-                                                                    groupNotifIds[i],
-                                                                    groupNotifs[i]
-                                                                )
                                                             }
                                                         }
+                                                        //notify group details changed
                                                     }
-                                                }
 
-                                                override fun onChildChanged(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    return
-                                                }
-
-                                                override fun onChildRemoved(snapshot: DataSnapshot) {
-                                                    return
-                                                }
-
-                                                override fun onChildMoved(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    return
-                                                }
-
-                                                override fun onCancelled(error: DatabaseError) {
-                                                    return
-                                                }
-
-                                            })
-                                    Log.e("Flantern listeners", groupMessageListeners.size.toString())
-                                    groupMessageListeners[groupUID] =
-                                        database.getReference("group_messages/$groupUID/live")
-                                            .orderByKey().limitToLast(1)
-                                            .addChildEventListener(object : ChildEventListener {
-                                                var fakeEventIntercept7 = false
-                                                override fun onChildAdded(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    if (!fakeEventIntercept7) {
-                                                        fakeEventIntercept7 = true
+                                                    override fun onChildChanged(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
                                                         return
                                                     }
-                                                    Log.e("Flantern", "Hello I m running")
-                                                    //notify group messages changed
-                                                    when (snapshot.child("op")
-                                                        .getValue(Int::class.java)) {
-                                                        DatabaseOp.ADD.ordinal -> {
-                                                            Log.e("Flantern", "Message Sent")
-                                                            database.getReference("group_messages/$groupUID/static/${snapshot.key}/content")
-                                                                .get()
-                                                                .addOnCompleteListener { data ->
-                                                                    val description =
-                                                                        data.result.getValue(String::class.java)!!
-                                                                    Log.e("Flantern", description)
-                                                                    groupMessageNotifs.add(
-                                                                        groupMessageNotif.setContentText(
-                                                                            description
-                                                                        ).build()
-                                                                    )
-                                                                    if (groupMessageNotifs.size > 3) {
-                                                                        groupMessageNotifs.removeAt(
-                                                                            0
-                                                                        )
-                                                                    }
-                                                                    Log.e("Flantern", groupMessageNotifs.size.toString())
-                                                                    for (i in 0 until groupMessageNotifs.size) {
-                                                                        notificationManager.notify(
-                                                                            groupMessageNotifIds[i],
-                                                                            groupMessageNotifs[i]
-                                                                        )
-                                                                        Log.e("Flantern notif dispatch", i.toString())
-                                                                    }
+
+                                                    override fun onChildRemoved(snapshot: DataSnapshot) {
+                                                        return
+                                                    }
+
+                                                    override fun onChildMoved(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        return
+                                                    }
+
+                                                    override fun onCancelled(error: DatabaseError) {
+                                                        return
+                                                    }
+
+                                                })
+                                        Log.e(
+                                            "Flantern listeners",
+                                            groupMessageListeners.size.toString()
+                                        )
+                                        groupMessageListeners[groupUID] =
+                                            database.getReference("group_messages/$groupUID/live")
+                                                .orderByKey().limitToLast(1)
+                                                .addChildEventListener(object : ChildEventListener {
+                                                    var fakeEventIntercept7 = false
+                                                    override fun onChildAdded(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        Log.e("Flantern oh", snapshot.key!!)
+                                                        if (!hardcodeCheck[hardCodeUUID19]!!) {
+                                                            hardcodeCheck[hardCodeUUID19] = true
+                                                        } else {
+                                                            Log.e("Flantern", "Hello I m running")
+                                                            //notify group messages changed
+                                                            when (snapshot.child("op")
+                                                                .getValue(Int::class.java)) {
+                                                                DatabaseOp.ADD.ordinal -> {
+                                                                    Log.e("Flantern", "Message Sent")
+                                                                    database.getReference("group_messages/$groupUID/static/${snapshot.key}/content")
+                                                                        .get()
+                                                                        .addOnCompleteListener { data ->
+                                                                            val description =
+                                                                                data.result.getValue(String::class.java)!!
+                                                                            Log.e("Flantern", description)
+                                                                            groupMessageNotifs.add(
+                                                                                groupMessageNotif.setContentText(
+                                                                                    description
+                                                                                ).build()
+                                                                            )
+                                                                            if (groupMessageNotifs.size > 3) {
+                                                                                groupMessageNotifs.removeAt(
+                                                                                    0
+                                                                                )
+                                                                            }
+                                                                            Log.e(
+                                                                                "Flantern",
+                                                                                groupMessageNotifs.size.toString()
+                                                                            )
+                                                                            for (i in 0 until groupMessageNotifs.size) {
+                                                                                notificationManager.notify(
+                                                                                    groupMessageNotifIds[i],
+                                                                                    groupMessageNotifs[i]
+                                                                                )
+                                                                                Log.e(
+                                                                                    "Flantern notif dispatch",
+                                                                                    i.toString()
+                                                                                )
+                                                                            }
+                                                                        }
                                                                 }
+                                                            }
                                                         }
                                                     }
-                                                }
 
-                                                override fun onChildChanged(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    return
-                                                }
+                                                    override fun onChildChanged(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        return
+                                                    }
 
-                                                override fun onChildRemoved(snapshot: DataSnapshot) {
-                                                    return
-                                                }
+                                                    override fun onChildRemoved(snapshot: DataSnapshot) {
+                                                        return
+                                                    }
 
-                                                override fun onChildMoved(
-                                                    snapshot: DataSnapshot,
-                                                    previousChildName: String?
-                                                ) {
-                                                    return
-                                                }
+                                                    override fun onChildMoved(
+                                                        snapshot: DataSnapshot,
+                                                        previousChildName: String?
+                                                    ) {
+                                                        return
+                                                    }
 
-                                                override fun onCancelled(error: DatabaseError) {
-                                                    return
-                                                }
+                                                    override fun onCancelled(error: DatabaseError) {
+                                                        return
+                                                    }
 
-                                            })
-                                    Log.e("Flantern listeners", groupMessageListeners.size.toString())
-                                }
-                        }
-                        DatabaseOp.DELETE.ordinal -> {
-                            //notify group deleted
-                            val groupUID = snapshot.child("data").getValue(String::class.java)
-                            val groupListener = groupListeners.remove(groupUID)
-                            val groupMessageListener = groupMessageListeners.remove(groupUID)
-                            if (groupListener != null) {
-                                database.getReference("users/$groupUID/live")
-                                    .removeEventListener(groupListener)
+                                                })
+                                        Log.e(
+                                            "Flantern listeners",
+                                            groupMessageListeners.size.toString()
+                                        )
+                                    }
                             }
-                            if (groupMessageListener != null) {
-                                database.getReference("users/$groupUID/live")
-                                    .removeEventListener(groupMessageListener)
+                            DatabaseOp.DELETE.ordinal -> {
+                                //notify group deleted
+                                val groupUID = snapshot.child("data").getValue(String::class.java)
+                                val groupListener = groupListeners.remove(groupUID)
+                                val groupMessageListener = groupMessageListeners.remove(groupUID)
+                                if (groupListener != null) {
+                                    database.getReference("groups/$groupUID/live")
+                                        .removeEventListener(groupListener)
+                                }
+                                if (groupMessageListener != null) {
+                                    database.getReference("group_messages/$groupUID/live")
+                                        .removeEventListener(groupMessageListener)
+                                }
                             }
                         }
                     }
@@ -644,7 +1136,7 @@ class FeedService : Service() {
                 override fun onCancelled(error: DatabaseError) {
                     return
                 }
-            })
+            })*/
 
 
         val builder = NotificationCompat.Builder(this, "com.picobyte.flantern")

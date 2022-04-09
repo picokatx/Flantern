@@ -1,6 +1,10 @@
 package com.picobyte.flantern
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +17,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
@@ -40,11 +45,20 @@ class MainActivity : AppCompatActivity() {
     lateinit var adjectives: List<String>
     lateinit var animals: List<String>
     lateinit var requests: FlanternRequests
+    private val pong: BroadcastReceiver = object: BroadcastReceiver(){
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            isServiceRunning = true
+        }
+    }
     val gson = Gson()
     val REQUEST_GALLERY_CODE = 300
     val userMap: HashMap<String, User> = HashMap<String, User>()
+    var isServiceRunning = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        LocalBroadcastManager.getInstance(this).registerReceiver(pong, IntentFilter("pong"));
+        LocalBroadcastManager.getInstance(this).sendBroadcastSync(Intent("ping"));
+
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.READ_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED

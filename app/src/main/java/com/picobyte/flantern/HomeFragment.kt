@@ -39,9 +39,6 @@ class HomeFragment : Fragment() {
         val tabLayout = binding.homeTabLayout
 
 
-        val service = Intent(context, FeedService::class.java)
-        service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
-        context!!.startService(service)
 
         //val authUID = (context as MainActivity).authGoogle.getUID()
         binding.toolbar.inflateMenu(R.menu.menu_main)
@@ -78,8 +75,8 @@ class HomeFragment : Fragment() {
                                     Toast.LENGTH_LONG
                                 ).show()
                             },
-                            {
-                                Toast.makeText(context, "This invite code is invalid!", Toast.LENGTH_LONG).show()
+                            { err ->
+                                Toast.makeText(context, err, Toast.LENGTH_LONG).show()
                             }
                         )
                         /*(requireActivity() as MainActivity).rtDatabase.getReference("/group_invites")

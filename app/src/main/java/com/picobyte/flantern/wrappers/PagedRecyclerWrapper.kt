@@ -99,6 +99,7 @@ class PagedRecyclerWrapper<T>(
         ref.child("live").orderByKey().limitToLast(1)
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.e("Flantern wat", snapshot.key!!)
                     if (isLiveLoaded) {
                         when (snapshot.child("op").getValue(Int::class.java)) {
                             DatabaseOp.ADD.ordinal -> {
@@ -126,7 +127,7 @@ class PagedRecyclerWrapper<T>(
                             }
                             DatabaseOp.DELETE.ordinal -> {
                                 //todo: fix this in accordance to live/repo implementation
-                                for (i in 0..repo.size) {
+                                for (i in 0 until repo.size) {
                                     if (repo[i].first == snapshot.key) {
                                         repo.removeAt(i)
                                         adapter.notifyItemRemoved(i)
@@ -136,7 +137,7 @@ class PagedRecyclerWrapper<T>(
                             }
                             DatabaseOp.MODIFY.ordinal -> {
                                 //todo: fix this in accordance to live/repo implementation
-                                for (i in 0..repo.size) {
+                                for (i in 0 until repo.size) {
                                     if (repo[i].first == snapshot.key) {
                                         ref.child("static/${snapshot.key}").get()
                                             .addOnCompleteListener {

@@ -197,21 +197,17 @@ class ChatAdapter(
                 }
             }
 
-            val userMap = (itemView.context as MainActivity).userMap
-            if (!userMap.containsKey(chp.user)) {
-                binding.nameField.text = "..."
-                (itemView.context as MainActivity).requests.getUser(chp.user!!, {
-                    userMap[chp.user] = it
-                    binding.nameField.text = userMap[chp.user]!!.name
-                }, {
-                    Toast.makeText(
-                        itemView.context,
-                        it,
-                        Toast.LENGTH_LONG
-                    ).show()
-                })
-            } else {
-                binding.nameField.text = userMap[chp.user]!!.name
+            (itemView.context as MainActivity).requests.getUserName(chp.user!!, {
+                binding.nameField.text = it
+            }, {
+                Toast.makeText(
+                    itemView.context,
+                    it,
+                    Toast.LENGTH_LONG
+                ).show()
+            })
+            (itemView.context as MainActivity).requests.listenForUserName(chp.user) {
+                binding.nameField.text = it
             }
             binding.testImage.visibility = View.GONE
             binding.testVideo.visibility = View.GONE
