@@ -6,6 +6,7 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.picobyte.flantern.api.FlanternRequests
 import com.picobyte.flantern.types.DatabaseOp
 import com.picobyte.flantern.types.MessageEdit
 
@@ -129,6 +130,7 @@ class FullLoadRecyclerWrapper<T>(
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (isLiveLoaded) {
+                        Log.e("Flantern OP", snapshot.value.toString())
                         when (snapshot.child("op").getValue(Int::class.java)) {
                             DatabaseOp.ADD.ordinal -> {
                                 keyRef.child("static/${snapshot.key}").get().addOnCompleteListener {
@@ -154,8 +156,12 @@ class FullLoadRecyclerWrapper<T>(
                             }
                             DatabaseOp.DELETE.ordinal -> {
                                 //todo: fix this in accordance to live/repo implementation
-                                for (i in 0..repo.size) {
-                                    if (repo[i].first.first == snapshot.key) {
+                                Log.e("Flantern del",snapshot.value.toString())
+                                val key = snapshot.child("data").getValue(String::class.java)
+                                for (i in 0 until repo.size) {
+                                    Log.e("Flantern del", "${repo[i].first.first} $key")
+                                    if (repo[i].first.first == key) {
+                                        Log.e("Flantern has", "$key ${repo[i].first.first}")
                                         repo.removeAt(i)
                                         adapter.notifyItemRemoved(i)
                                         break
