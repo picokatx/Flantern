@@ -33,20 +33,20 @@ class SignInFragment : Fragment() {
                     .show()
                 (context as MainActivity).requests.getUser((context as MainActivity).authGoogle.getUID(),
                     {
-                        Log.e("Flantern", (context as MainActivity).isServiceRunning.toString())
-                        if (!(context as MainActivity).isServiceRunning) {
-                            val service = Intent(context, FeedService::class.java)
-                            service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
+                        //Log.e("Flantern", (context as MainActivity).isServiceRunning.toString())
+                        //if (!(context as MainActivity).isServiceRunning) {
+                            //val service = Intent(context, FeedService::class.java)
+                            //service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
                             //context!!.startService(service)
-                        }
+                        //}
                         navigateTo(binding.root, R.id.action_global_HomeFragment)
                     },
                     {
-                        if (!(context as MainActivity).isServiceRunning) {
+                        /*if (!(context as MainActivity).isServiceRunning) {
                             val service = Intent(context, FeedService::class.java)
                             service.putExtra("user_uid", (context as MainActivity).authGoogle.getUID())
                             //context!!.startService(service)
-                        }
+                        }*/
                         (context as MainActivity).requests.createNewUser {
                             navigateTo(binding.root, R.id.action_global_HomeFragment)
                         }
@@ -83,7 +83,16 @@ class SignInFragment : Fragment() {
                             "Signed in with Firebase",
                             Toast.LENGTH_SHORT
                         ).show()
-                        navigateTo(binding.root, R.id.action_SignInFragment_to_HomeFragment)
+                        (context as MainActivity).requests.getUser((context as MainActivity).authGoogle.getUID(),
+                            {
+                                navigateTo(binding.root, R.id.action_global_HomeFragment)
+                            },
+                            {
+                                (context as MainActivity).requests.createNewUser {
+                                    navigateTo(binding.root, R.id.action_SignInFragment_to_HomeFragment)
+                                }
+                            }
+                        )
                     } else {
                         Toast.makeText(
                             binding.root.context,
@@ -99,6 +108,24 @@ class SignInFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        //(binding.root.context as AppCompatActivity).menuInflater.inflate(R.menu.menu_main, menu)
+        (binding.root.context as AppCompatActivity).menuInflater.inflate(R.menu.menu_login, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_about_us -> {
+                navigateTo(binding.root, R.id.action_global_AboutFragment)
+                true
+            }
+            R.id.action_contact -> {
+                navigateTo(binding.root, R.id.action_global_ContactFragment)
+                true
+            }
+            R.id.action_help -> {
+                navigateTo(binding.root, R.id.action_global_OnboardingFragment)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }

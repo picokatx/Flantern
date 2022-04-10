@@ -33,6 +33,8 @@ import com.picobyte.flantern.databinding.ActivityMainBinding
 import com.picobyte.flantern.db.GroupsViewModel
 import com.picobyte.flantern.api.FlanternRequests
 import com.picobyte.flantern.types.User
+import com.picobyte.flantern.utils.navigateTo
+import com.picobyte.flantern.utils.navigateWithBundle
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -45,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var adjectives: List<String>
     lateinit var animals: List<String>
     lateinit var requests: FlanternRequests
-    private val pong: BroadcastReceiver = object: BroadcastReceiver(){
+    private val pong: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             isServiceRunning = true
         }
@@ -97,13 +99,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_login, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_settings -> {
-                Toast.makeText(binding.root.context, "Settings Clicked!", Toast.LENGTH_SHORT).show()
+            R.id.action_about_us -> {
+                navigateTo(binding.root, R.id.action_global_AboutFragment)
+                true
+            }
+            R.id.action_contact -> {
+                navigateTo(binding.root, R.id.action_global_ContactFragment)
+                true
+            }
+            R.id.action_help -> {
+                val bundle = Bundle()
+                bundle.putString("bypass", "plzbypassthischeck")
+                navigateWithBundle(binding.root, R.id.action_global_OnboardingFragment, bundle)
                 true
             }
             else -> super.onOptionsItemSelected(item)

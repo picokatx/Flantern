@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserInfo
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -729,13 +730,25 @@ class FlanternRequests(
     }
 
     fun createNewUser(callback: (user: User) -> Unit = {}) {
-        val user = User(
-            auth.currentUser?.displayName,
-            auth.currentUser?.email,
-            "Hello Flantern!",
-            Status.ACTIVE.ordinal,
-            "8bcbd691-ba4f-4f32-bce2-dff8d4412b66"
-        )
+        var user: User
+        if (auth.currentUser?.displayName==null) {
+            user = User(
+                "Flantern User",
+                auth.currentUser?.email,
+                "Hello Flantern!",
+                Status.ACTIVE.ordinal,
+                "8bcbd691-ba4f-4f32-bce2-dff8d4412b66"
+            )
+        } else {
+            user = User(
+                auth.currentUser?.displayName,
+                auth.currentUser?.email,
+                "Hello Flantern!",
+                Status.ACTIVE.ordinal,
+                "8bcbd691-ba4f-4f32-bce2-dff8d4412b66"
+            )
+        }
+
         database.getReference("user/${auth.currentUser?.uid}/static").setValue(user)
             .addOnCompleteListener {
                 database.getReference("user/${auth.currentUser?.uid}/live").push().child("op")

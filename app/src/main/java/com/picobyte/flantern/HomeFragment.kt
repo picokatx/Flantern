@@ -38,10 +38,11 @@ class HomeFragment : Fragment() {
         val viewPager = binding.homeViewPager
         val tabLayout = binding.homeTabLayout
 
-
-
         //val authUID = (context as MainActivity).authGoogle.getUID()
         binding.toolbar.inflateMenu(R.menu.menu_main)
+        binding.settingsFab.setOnClickListener {
+            navigateTo(binding.root, R.id.action_HomeFragment_to_SettingsFragment)
+        }
         binding.toolbar.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.action_new_contact -> {

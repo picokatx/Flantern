@@ -61,7 +61,7 @@ class AuthGoogle(private val context: AppCompatActivity, private val auth: Fireb
             .addOnCompleteListener(context) { task ->
                 if (task.isSuccessful) {
                     Log.e("Flantern", "signInWithEmail:success")
-                    val user = auth.currentUser
+                    user = auth.currentUser!!
                 } else {
                     Log.e("Flantern", "signInWithEmail:failure", task.exception)
                 }
@@ -73,7 +73,7 @@ class AuthGoogle(private val context: AppCompatActivity, private val auth: Fireb
             .addOnCompleteListener(context) { task ->
                 if (task.isSuccessful) {
                     Log.d("Flantern", "createUserWithEmail:success")
-                    val user = auth.currentUser
+                    user = auth.currentUser!!
                 } else {
                     Log.w("Flantern", "createUserWithEmail:failure", task.exception)
                 }

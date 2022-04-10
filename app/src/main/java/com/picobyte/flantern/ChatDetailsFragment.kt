@@ -131,6 +131,11 @@ class ChatDetailsFragment : Fragment() {
                     Toast.LENGTH_LONG
                 ).show()
             })
+            binding.topBarEdit.setOnClickListener {
+                val bundle = Bundle()
+                bundle.putString("group_uid", groupUID)
+                navigateWithBundle(binding.root, R.id.action_global_EditGroupFragment, bundle)
+            }
 
             binding.actionBarExit.setOnClickListener {
                 val builder = AlertDialog.Builder(context!!)

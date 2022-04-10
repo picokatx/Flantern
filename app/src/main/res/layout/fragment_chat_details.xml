@@ -35,6 +35,15 @@
                 android:background="@color/content_background_primary"
                 android:padding="16dp">
 
+                <ImageButton
+                    android:id="@+id/topBarEdit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/pen"
+                    app:layout_constraintBottom_toBottomOf="@+id/topBarTitle"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/topBarTitle" />
+
                 <ImageView
                     android:id="@+id/topBarIcon"
                     android:layout_width="100dp"

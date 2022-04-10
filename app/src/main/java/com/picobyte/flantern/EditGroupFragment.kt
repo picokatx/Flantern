@@ -56,7 +56,7 @@ class EditGroupFragment : Fragment() {
     ): View {
         val binding = FragmentEditGroupBinding.inflate(inflater, container, false)
         groupProfileField = binding.groupProfileField
-        val contacts = arguments?.getStringArrayList("user_contacts")!!
+        val contacts = arguments?.getStringArrayList("user_contacts")
         val groupUID = arguments?.getString("group_uid")
         if (groupUID != null) {
             (context as MainActivity).requests.getGroup(groupUID, {
@@ -127,7 +127,7 @@ class EditGroupFragment : Fragment() {
                     System.currentTimeMillis()
                 )
                 Log.e("Flantern", "hello initialize rpoced")
-                (context as MainActivity).requests.createGroup(group, contacts) {
+                (context as MainActivity).requests.createGroup(group, contacts!!) {
                     (context as MainActivity).requests.setGroupMediaBitmap(
                         embedUUID,
                         it,
@@ -182,9 +182,10 @@ class EditGroupFragment : Fragment() {
                     .setValue(DatabaseOp.ADD)*/
             } else {
                 val ref =
-                    (requireActivity() as MainActivity).rtDatabase.getReference("/groups/$groupUID/static")
-                        .push()
+                    (requireActivity() as MainActivity).rtDatabase.getReference("groups/$groupUID/static")
+
                 ref.get().addOnCompleteListener {
+                    Log.e("Flantenr", it.result.ref.toString())
                     val group = it.result.getValue(Group::class.java)!!
                     if (group.name != binding.groupNameField.text.toString()) {
                         Log.e("Flantern", "hello edit group am triggering")
@@ -196,7 +197,10 @@ class EditGroupFragment : Fragment() {
                         ref.child("live").push().child("op").setValue(GroupEdit.DESCRIPTION.ordinal)
                     }
                     if (imageWasChanged) {
-                        val embedUUID = UUID.randomUUID().toString()
+                        var embedUUID = group.profile
+                        if (embedUUID==null) {
+                            embedUUID = UUID.randomUUID().toString()
+                        }
                         val outputStream = ByteArrayOutputStream()
                         Log.e("Flantern", "hello edit group am triggering")
                         BitmapFactory.decodeStream(
